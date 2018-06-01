@@ -10,7 +10,7 @@ This repository is modified from previous work of [ROS Loam Velodyne](http://wik
 All sources were taken from [ROS documentation](http://docs.ros.org/indigo/api/loam_velodyne/html/files.html)
 
 <!--Ask questions [here](https://github.com/laboshinl/loam_velodyne/issues/3). -->
----
+
 ## Build with catkin:
 
 * Clone the repository:

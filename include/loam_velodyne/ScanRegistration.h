@@ -204,6 +204,7 @@ protected:
   /** \breif Check is IMU data is available. */
   inline bool hasIMUData() { return _imuHistory.size() > 0; };
 
+
   /** \brief Set up the current IMU transformation for the specified relative time.
    *
    * @param relTime the time relative to the scan time

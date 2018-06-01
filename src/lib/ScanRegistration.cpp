@@ -200,7 +200,8 @@ bool ScanRegistration::setup(ros::NodeHandle& node,
   _imuHistory.ensureCapacity(_config.imuHistorySize);
 
   // subscribe to IMU topic
-  _subImu = node.subscribe<sensor_msgs::Imu>("/imu/data", 50, &ScanRegistration::handleIMUMessage, this);
+  //_subImu = node.subscribe<sensor_msgs::Imu>("/imu/data", 50, &ScanRegistration::handleIMUMessage, this);
+  _subImu = node.subscribe<sensor_msgs::Imu>("/kitti/oxts/imu", 50, &ScanRegistration::handleIMUMessage, this);
 
 
   // advertise scan registration topics
@@ -218,6 +219,7 @@ bool ScanRegistration::setup(ros::NodeHandle& node,
 
 void ScanRegistration::handleIMUMessage(const sensor_msgs::Imu::ConstPtr& imuIn)
 {
+  ROS_INFO("test exist %f", imuIn->linear_acceleration.y);
   double roll, pitch, yaw;
   tf::Quaternion orientation;
   tf::quaternionMsgToTF(imuIn->orientation, orientation);
