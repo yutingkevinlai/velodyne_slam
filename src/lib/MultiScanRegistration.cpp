@@ -131,8 +131,8 @@ bool MultiScanRegistration::setup(ros::NodeHandle& node,
 
   // subscribe to input cloud topic
   _subLaserCloud = node.subscribe<sensor_msgs::PointCloud2>
-      //("/points_raw", 2, &MultiScanRegistration::handleCloudMessage, this);
-      ("/kitti/velo/pointcloud", 2, &MultiScanRegistration::handleCloudMessage, this);
+      ("/points_raw", 1000, &MultiScanRegistration::handleCloudMessage, this);
+      //("/kitti/velo/pointcloud", 2, &MultiScanRegistration::handleCloudMessage, this);
 
   return true;
 }
@@ -230,7 +230,7 @@ void MultiScanRegistration::process(const pcl::PointCloud<pcl::PointXYZ>& laserC
 
     // project point to the start of the sweep using corresponding IMU data
     if (hasIMUData()) {
-      ROS_INFO("Imu data found!!!");
+      //ROS_INFO("Imu data found!!!");
       setIMUTransformFor(relTime);
       transformToStartIMU(point);
     }
