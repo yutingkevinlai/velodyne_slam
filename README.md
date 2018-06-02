@@ -28,6 +28,8 @@ $ source ~/catkin_ws/devel/setup.bash
 roslaunch loam_velodyne loam_velodyne.launch
 ```
 
+Remember to check the velodyne configuration to modify the parameters in loam_velodyne.launch
+
 * Play the velodyne rosbag data in the second terminal (Note the published name of the point cloud should be consistent with the subscription).
 ```
 rosbag play ~/Downloads/velodyne.bag 
