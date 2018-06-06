@@ -131,8 +131,8 @@ bool MultiScanRegistration::setup(ros::NodeHandle& node,
 
   // subscribe to input cloud topic
   _subLaserCloud = node.subscribe<sensor_msgs::PointCloud2>
-      ("/points_raw", 1000, &MultiScanRegistration::handleCloudMessage, this);
-      //("/kitti/velo/pointcloud", 2, &MultiScanRegistration::handleCloudMessage, this);
+      //("/points_raw", 1000, &MultiScanRegistration::handleCloudMessage, this);
+      ("/kitti/velo/pointcloud", 2, &MultiScanRegistration::handleCloudMessage, this);
 
   return true;
 }
