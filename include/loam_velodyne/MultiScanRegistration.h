@@ -130,11 +130,13 @@ public:
                const ros::Time& scanTime);
 
 
-protected:
+protected: 
   int _systemDelay;             ///< system startup delay counter
   MultiScanMapper _scanMapper;  ///< mapper for mapping vertical point angles to scan ring IDs
 
   ros::Subscriber _subLaserCloud;   ///< input cloud message subscriber
+
+  pcl::PointCloud<pcl::PointXYZ> _laserCloudPrev;
 
 
 private:
