@@ -141,7 +141,7 @@ bool MultiScanRegistration::setup(ros::NodeHandle& node,
 void MultiScanRegistration::handleCloudMessage(const sensor_msgs::PointCloud2ConstPtr &laserCloudMsg)
 {
   if (_systemDelay > 0) {
-    // write the cloud _laserCloudPrev at previous time
+    // write the cloud _laserCloudPrev at previous time (Kevin)
     if (_systemDelay > 1) {
       pcl::fromROSMsg(*laserCloudMsg, _laserCloudPrev);
     }
@@ -153,12 +153,9 @@ void MultiScanRegistration::handleCloudMessage(const sensor_msgs::PointCloud2Con
   pcl::PointCloud<pcl::PointXYZ> laserCloudIn;
   pcl::fromROSMsg(*laserCloudMsg, laserCloudIn);
 
-  // do process here!
-
-
   process(laserCloudIn, laserCloudMsg->header.stamp);
 
-  // write current cloud to previous one for next run
+  // write current cloud to previous one for next run (Kevin)
   _laserCloudPrev = laserCloudIn;
 }
 
@@ -239,7 +236,6 @@ void MultiScanRegistration::process(const pcl::PointCloud<pcl::PointXYZ>& laserC
 
     // project point to the start of the sweep using corresponding IMU data
     if (hasIMUData()) {
-      //ROS_INFO("Imu data found!!!");
       setIMUTransformFor(relTime);
       transformToStartIMU(point);
     }
