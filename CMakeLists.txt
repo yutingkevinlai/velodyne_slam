@@ -43,6 +43,9 @@ target_link_libraries(laserMapping ${catkin_LIBRARIES} ${PCL_LIBRARIES} loam )
 add_executable(transformMaintenance src/transform_maintenance_node.cpp)
 target_link_libraries(transformMaintenance ${catkin_LIBRARIES} ${PCL_LIBRARIES} loam )
 
+add_executable(motionRemoval src/motion_removal_node.cpp src/lib/MotionRemoval.cpp)
+target_link_libraries(motionRemoval ${catkin_LIBRARIES} ${PCL_LIBRARIES} loam)
+
 if (CATKIN_ENABLE_TESTING)
   find_package(rostest REQUIRED)
   # TODO: Download test data
@@ -60,7 +63,8 @@ if (CATKIN_ENABLE_TESTING)
       multiScanRegistration
       laserOdometry
       laserMapping
-      transformMaintenance)
+      transformMaintenance
+						motionRemoval)
 endif()
 
 

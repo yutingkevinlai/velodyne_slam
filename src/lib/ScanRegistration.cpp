@@ -211,6 +211,9 @@ bool ScanRegistration::setup(ros::NodeHandle& node,
   _pubSurfPointsFlat = node.advertise<sensor_msgs::PointCloud2>("/laser_cloud_flat", 2);
   _pubSurfPointsLessFlat = node.advertise<sensor_msgs::PointCloud2>("/laser_cloud_less_flat", 2);
   _pubImuTrans = node.advertise<sensor_msgs::PointCloud2>("/imu_trans", 5);
+  
+  // publish previous cloud topic
+  _pubLaserCloudPrev = node.advertise<sensor_msgs::PointCloud2>("/previous_cloud_2", 2);
 
   return true;
 }

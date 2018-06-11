@@ -136,8 +136,6 @@ protected:
 
   ros::Subscriber _subLaserCloud;   ///< input cloud message subscriber
 
-  pcl::PointCloud<pcl::PointXYZ> _laserCloudPrev;
-
 
 private:
   static const int SYSTEM_DELAY = 20;
