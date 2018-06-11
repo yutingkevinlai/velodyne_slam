@@ -11,11 +11,11 @@ int main(int argc, char **argv)
 
   loam::MotionRemoval motionRemoval;
 
-		/*
+		
   if (motionRemoval.setup(node, privateNode)) {
     // initialization successful
     ros::spin();
   }
-		*/
+		
   return 0;
 }
