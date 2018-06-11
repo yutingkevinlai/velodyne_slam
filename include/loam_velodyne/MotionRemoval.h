@@ -41,11 +41,7 @@ public:
   bool setup(ros::NodeHandle& node,
              ros::NodeHandle& privateNode);
 
-  void prevCloudHandler(const sensor_msgs::PointCloud2ConstPtr& prevCloudMsg);
-
-  void curCloudHandler(const sensor_msgs::PointCloud2ConstPtr& curCloudMsg);
-
-  void segmentation(const pcl::PointCloud<pcl::PointXYZ>& cloudIn);
+  void cloudHandler(const sensor_msgs::PointCloud2ConstPtr& cloudMsg);
 
   /** \brief Handler method for mapping odometry messages.
    *
@@ -61,6 +57,7 @@ protected:
 */
 
 private:
+  int count; /// for counting in handler
   
   pcl::PointCloud<pcl::PointXYZ> _prevCloud;
   pcl::PointCloud<pcl::PointXYZ> _curCloud; 
