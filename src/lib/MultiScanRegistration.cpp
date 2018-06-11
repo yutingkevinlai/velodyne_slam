@@ -141,10 +141,6 @@ bool MultiScanRegistration::setup(ros::NodeHandle& node,
 void MultiScanRegistration::handleCloudMessage(const sensor_msgs::PointCloud2ConstPtr &laserCloudMsg)
 {
   if (_systemDelay > 0) {
-    // write the cloud _laserCloudPrev at previous time (Kevin)
-    if (_systemDelay > 1) {
-      pcl::fromROSMsg(*laserCloudMsg, _laserCloudPrev);
-    }
     _systemDelay--;
     return;
   }
@@ -154,9 +150,6 @@ void MultiScanRegistration::handleCloudMessage(const sensor_msgs::PointCloud2Con
   pcl::fromROSMsg(*laserCloudMsg, laserCloudIn);
 
   process(laserCloudIn, laserCloudMsg->header.stamp);
-
-  // write current cloud to previous one for next run (Kevin)
-  _laserCloudPrev = laserCloudIn;
 }
 
 

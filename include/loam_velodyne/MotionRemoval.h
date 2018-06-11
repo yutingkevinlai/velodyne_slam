@@ -45,7 +45,8 @@ protected:
 
 private:
 
-		pcl::PointCloud<pcl::PointXYZ>::Ptr _testCloud; 
+		pcl::PointCloud<pcl::PointXYZ> _prevCloud;
+  pcl::PointCloud<pcl::PointXYZ> _curCloud; 
 
 
   ros::Time _timePrevCloud;      ///< time for previous cloud (cloud 3)

@@ -277,8 +277,6 @@ protected:
 
   pcl::PointCloud<pcl::PointXYZI> _laserCloud;   ///< full resolution input cloud
 
-  pcl::PointCloud<pcl::PointXYZ> _laserCloudPrev;///< previous cloud (Kevin)
-
   std::vector<IndexRange> _scanIndices;          ///< start and end indices of the individual scans withing the full resolution cloud
 
   pcl::PointCloud<pcl::PointXYZI> _cornerPointsSharp;      ///< sharp corner points cloud
@@ -300,8 +298,6 @@ protected:
   ros::Publisher _pubSurfPointsFlat;          ///< flat surface cloud message publisher
   ros::Publisher _pubSurfPointsLessFlat;      ///< less flat surface cloud message publisher
   ros::Publisher _pubImuTrans;                ///< IMU transformation message publisher
-
-  ros::Publisher _pubLaserCloudPrev;          ///< previous cloud message publisher (Kevin)
 };
 
 } // end namespace loam
