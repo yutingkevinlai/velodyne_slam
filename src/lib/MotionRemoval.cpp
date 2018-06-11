@@ -9,7 +9,7 @@ namespace loam {
 using std::cout;
 using std::endl;
 
-MotionRemoval::MotionRemoval()
+MotionRemoval::MotionRemoval() : _testCloud(new pcl::PointCloud<pcl::PointXYZ>())
 {
 
 }
@@ -22,6 +22,8 @@ MotionRemoval::~MotionRemoval()
 bool MotionRemoval::setup(ros::NodeHandle& node,
                           ros::NodeHandle& privateNode)
 {
+  _pubTest = node.advertise<sensor_msgs::PointCloud2> ("/test", 1);
+
 	 // subscribe to point cloud 2 and 3 topics
   _subPrevCloud = node.subscribe<sensor_msgs::PointCloud2>
       ("/velodyne_cloud_3", 2, &MotionRemoval::prevCloudHandler, this);
@@ -35,19 +37,26 @@ bool MotionRemoval::setup(ros::NodeHandle& node,
 void MotionRemoval::prevCloudHandler(const sensor_msgs::PointCloud2ConstPtr& prevCloudMsg)
 {
 		_timePrevCloud = prevCloudMsg->header.stamp;
-		cout << _timePrevCloud << endl;
+  pcl::fromROSMsg(*prevCloudMsg, *_testCloud);
+  //ROS_INFO("prevTime: %f", _timePrevCloud);
 }
 
 void MotionRemoval::curCloudHandler(const sensor_msgs::PointCloud2ConstPtr& curCloudMsg)
 {
   _timeCurCloud = curCloudMsg->header.stamp;
-  cout << _timeCurCloud << endl;
+		//ROS_INFO("prevTime: %f", _timeCurCloud);
 }
 
 
 void MotionRemoval::process()
 {
 
+}
+
+void MotionRemoval::publishResult()
+{
+  ros::Time sweepTime = _timeCurCloud;
+  publishCloudMsg(_pubTest, *_testCloud, sweepTime, "/camera_init");
 }
 
 } // end namespace loam

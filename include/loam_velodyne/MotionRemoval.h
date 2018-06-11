@@ -1,10 +1,11 @@
 #ifndef LOAM_MOTIONREMOVAL_H
 #define LOAM_MOTIONREMOVAL_H
 
-
+#include "common.h"
 #include <ros/node_handle.h>
 #include <sensor_msgs/PointCloud2.h>
-#include <nav_msgs/Odometry.h>
+#include <pcl/point_cloud.h>
+#include <pcl/point_types.h>
 #include <tf/transform_broadcaster.h>
 
 namespace loam {
@@ -35,6 +36,8 @@ public:
    */
   void process();
 
+  void publishResult();
+
 /*
 protected:
   void transformAssociateToMap();
@@ -42,11 +45,17 @@ protected:
 
 private:
 
+		pcl::PointCloud<pcl::PointXYZ>::Ptr _testCloud; 
+
+
   ros::Time _timePrevCloud;      ///< time for previous cloud (cloud 3)
 		ros::Time _timeCurCloud;       ///< time for current cloud (cloud 2)
 
-  ros::Subscriber _subPrevCloud;    ///< (high frequency) laser odometry subscriber
-  ros::Subscriber _subCurCloud;    ///< (low frequency) mapping odometry subscriber
+	 ros::Publisher _pubTest;  ///< 
+
+
+  ros::Subscriber _subPrevCloud;    ///< previous cloud subscriber
+  ros::Subscriber _subCurCloud;    ///< current cloud subscriber
 
 };
 
