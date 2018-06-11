@@ -41,8 +41,12 @@ public:
   bool setup(ros::NodeHandle& node,
              ros::NodeHandle& privateNode);
 
-  void cloudHandler(const sensor_msgs::PointCloud2ConstPtr& cloudMsg);
 
+  /** \brief Process incoming messages in a loop until shutdown (used in active mode). */
+  void spin();
+
+  void cloudHandler(const sensor_msgs::PointCloud2ConstPtr& cloudMsg);
+  
   /** \brief Handler method for mapping odometry messages.
    *
    * @param odomAftMapped the new mapping odometry
@@ -65,10 +69,16 @@ private:
 
   ros::Time _timePrevCloud;      ///< time for previous cloud (cloud 3)
   ros::Time _timeCurCloud;       ///< time for current cloud (cloud 2)
+  
+  pcl::PointCloud<pcl::PointXYZI>::Ptr _prevCloud;
+  pcl::PointCloud<pcl::PointXYZI>::Ptr _curCloud;
+
+  bool _newPrevCloud;
+  bool _newCurCloud; 
 
   ros::Publisher _pubPrevCloud;  ///< 
   ros::Publisher _pubCurCloud;
-
+  
   ros::Subscriber _subPrevCloud;    ///< previous cloud subscriber
   ros::Subscriber _subCurCloud;    ///< current cloud subscriber
 
@@ -77,4 +87,4 @@ private:
 } // end namespace loam
 
 
-#endif //LOAM_TRANSFORMMAINTENANCE_H
+#endif //LOAM_MOTIONREMOVAL_H

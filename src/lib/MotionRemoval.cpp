@@ -9,9 +9,11 @@ namespace loam {
 using std::cout;
 using std::endl;
 
-MotionRemoval::MotionRemoval() : count(0),
-                                 _prevCloud(),
-	                               _curCloud()
+MotionRemoval::MotionRemoval()
+    :   _prevCloud(new pcl::PointCloud<pcl::PointXYZI>()),
+        _curCloud(new pcl::PointCloud<pcl::PointXYZI>()),
+        _newPrevCloud(false),
+        count(0)
 {
 
 }
@@ -24,12 +26,12 @@ MotionRemoval::~MotionRemoval()
 bool MotionRemoval::setup(ros::NodeHandle& node,
                           ros::NodeHandle& privateNode)
 {
+	 // subscribe to point cloud 2 and 3 topics may not need
+//  _subPrevCloud = node.subscribe<sensor_msgs::PointCloud2>
+//      ("/velodyne_cloud_3", 2, &MotionRemoval::prevCloudHandler, this);
+  
   _pubPrevCloud = node.advertise<sensor_msgs::PointCloud2> ("/prev_cloud", 2);
   _pubCurCloud = node.advertise<sensor_msgs::PointCloud2> ("/cur_cloud", 2);
-
-	// subscribe to point cloud 2 and 3 topics
-  //_subPrevCloud = node.subscribe<sensor_msgs::PointCloud2>
-  //          ("/velodyne_cloud_3", 2, &MotionRemoval::prevCloudHandler, this);
 
   _subCurCloud = node.subscribe<sensor_msgs::PointCloud2>
 						("/velodyne_cloud_registered", 2, &MotionRemoval::cloudHandler, this);
@@ -37,6 +39,24 @@ bool MotionRemoval::setup(ros::NodeHandle& node,
   return true;
 }
 
+
+void LaserOdometry::spin()
+{
+  ros::Rate rate(100);
+  bool status = ros::ok();
+
+  // loop until shutdown
+  while (status) {
+    ros::spinOnce();
+
+    // try processing new data
+    process();
+
+    status = ros::ok();
+    rate.sleep();
+  }
+}
+  
 void MotionRemoval::cloudHandler(const sensor_msgs::PointCloud2ConstPtr& cloudMsg)
 {
   if (count == 0) {

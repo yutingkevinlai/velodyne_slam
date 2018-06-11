@@ -15,6 +15,5 @@ int main(int argc, char **argv)
     // initialization successful
     ros::spin();
   }
-
   return 0;
 }
