@@ -1,10 +1,26 @@
 #ifndef LOAM_MOTIONREMOVAL_H
 #define LOAM_MOTIONREMOVAL_H
 
-
+#include <iostream>
+#include <vector>
+#include "common.h"
 #include <ros/node_handle.h>
 #include <sensor_msgs/PointCloud2.h>
-#include <nav_msgs/Odometry.h>
+#include <pcl/point_cloud.h>
+#include <pcl/point_types.h>
+#include <pcl/ModelCoefficients.h>
+#include <pcl/io/pcd_io.h>
+#include <pcl/filters/extract_indices.h>
+#include <pcl/filters/voxel_grid.h>
+#include <pcl/filters/passthrough.h>
+#include <pcl/features/normal_3d.h>
+#include <pcl/kdtree/kdtree.h>
+#include <pcl/sample_consensus/method_types.h>
+#include <pcl/sample_consensus/model_types.h>
+#include <pcl/segmentation/min_cut_segmentation.h>
+#include <pcl/segmentation/sac_segmentation.h>
+#include <pcl/segmentation/extract_clusters.h>
+#include <pcl/visualization/cloud_viewer.h>
 #include <tf/transform_broadcaster.h>
 
 namespace loam {
@@ -15,7 +31,7 @@ namespace loam {
 class MotionRemoval {
 public:
   MotionRemoval();
-		~MotionRemoval();
+  ~MotionRemoval();
 
   /** \brief Setup component.
    *
@@ -25,18 +41,19 @@ public:
   bool setup(ros::NodeHandle& node,
              ros::NodeHandle& privateNode);
 
-  void prevCloudHandler(const sensor_msgs::PointCloud2ConstPtr& prevCloudMsg);
-
-  void curCloudHandler(const sensor_msgs::PointCloud2ConstPtr& curCloudMsg);
 
   /** \brief Process incoming messages in a loop until shutdown (used in active mode). */
   void spin();
 
+  void cloudHandler(const sensor_msgs::PointCloud2ConstPtr& cloudMsg);
+  
   /** \brief Handler method for mapping odometry messages.
    *
    * @param odomAftMapped the new mapping odometry
    */
   void process();
+
+  void publishResult();
 
 /*
 protected:
@@ -44,17 +61,26 @@ protected:
 */
 
 private:
+  int count; /// for counting in handler
+  
+  pcl::PointCloud<pcl::PointXYZ> _prevCloud;
+  pcl::PointCloud<pcl::PointXYZ> _curCloud; 
+
 
   ros::Time _timePrevCloud;      ///< time for previous cloud (cloud 3)
   ros::Time _timeCurCloud;       ///< time for current cloud (cloud 2)
+  
   pcl::PointCloud<pcl::PointXYZI>::Ptr _prevCloud;
   pcl::PointCloud<pcl::PointXYZI>::Ptr _curCloud;
 
   bool _newPrevCloud;
   bool _newCurCloud; 
 
-  ros::Subscriber _subPrevCloud;    ///< (high frequency) laser odometry subscriber
-  ros::Subscriber _subCurCloud;    ///< (low frequency) mapping odometry subscriber
+  ros::Publisher _pubPrevCloud;  ///< 
+  ros::Publisher _pubCurCloud;
+  
+  ros::Subscriber _subPrevCloud;    ///< previous cloud subscriber
+  ros::Subscriber _subCurCloud;    ///< current cloud subscriber
 
 };
 

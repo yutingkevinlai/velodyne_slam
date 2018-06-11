@@ -13,6 +13,7 @@ MotionRemoval::MotionRemoval()
     :   _prevCloud(new pcl::PointCloud<pcl::PointXYZI>()),
         _curCloud(new pcl::PointCloud<pcl::PointXYZI>()),
         _newPrevCloud(false),
+        count(0)
 {
 
 }
@@ -28,30 +29,14 @@ bool MotionRemoval::setup(ros::NodeHandle& node,
 	 // subscribe to point cloud 2 and 3 topics may not need
 //  _subPrevCloud = node.subscribe<sensor_msgs::PointCloud2>
 //      ("/velodyne_cloud_3", 2, &MotionRemoval::prevCloudHandler, this);
+  
+  _pubPrevCloud = node.advertise<sensor_msgs::PointCloud2> ("/prev_cloud", 2);
+  _pubCurCloud = node.advertise<sensor_msgs::PointCloud2> ("/cur_cloud", 2);
 
   _subCurCloud = node.subscribe<sensor_msgs::PointCloud2>
-						("/velodyne_cloud_2", 2, &MotionRemoval::curCloudHandler, this);
+						("/velodyne_cloud_registered", 2, &MotionRemoval::cloudHandler, this);
 
   return true;
-}
-
-/* may not need it 
-void MotionRemoval::prevCloudHandler(const sensor_msgs::PointCloud2ConstPtr& prevCloudMsg)
-{
-  _timePrevCloud = prevCloudMsg->header.stamp;
-  cout << _timePrevCloud << endl;
-        
-}
-*/
-void MotionRemoval::curCloudHandler(const sensor_msgs::PointCloud2ConstPtr& curCloudMsg)
-{
-  _timeCurCloud = curCloudMsg->header.stamp;
-  cout << _timeCurCloud << endl;
-  _subCurCloud->clear();
-  pcl::fromROSMsg(*curCloudMsg, _curCloud);
-  std::vector<int> indices;
-  pcl::removeNaNFromPointCloud(*_curCloud, *_curCloud, indices);
-  _newCurCloud = true;
 }
 
 
@@ -71,11 +56,37 @@ void LaserOdometry::spin()
     rate.sleep();
   }
 }
+  
+void MotionRemoval::cloudHandler(const sensor_msgs::PointCloud2ConstPtr& cloudMsg)
+{
+  if (count == 0) {
+    pcl::fromROSMsg(*cloudMsg, _prevCloud);
+    _timePrevCloud = cloudMsg->header.stamp;
+    count ++;
+  }
+  else {
+    pcl::fromROSMsg(*cloudMsg, _curCloud);
+    _timeCurCloud = cloudMsg->header.stamp;
+    publishCloudMsg(_pubPrevCloud, _prevCloud, _timePrevCloud, "/camera_init");
+    publishCloudMsg(_pubCurCloud, _curCloud, _timePrevCloud, "/camera_init");
+    std::cout << "prev: " << _timePrevCloud << ", cur: " << _timeCurCloud << std::endl;
+    //process
+  }
+  _prevCloud = _curCloud;
+  _timePrevCloud = _timeCurCloud;
+}
 
 
 void MotionRemoval::process()
 {
 
+}
+
+void MotionRemoval::publishResult()
+{
+  ros::Time sweepTime = _timeCurCloud;
+  
+  
 }
 
 } // end namespace loam
