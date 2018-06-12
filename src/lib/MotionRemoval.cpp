@@ -35,7 +35,7 @@ bool MotionRemoval::setup(ros::NodeHandle& node,
   _pubCurCloud = node.advertise<sensor_msgs::PointCloud2> ("/cur_cloud", 2);
 
   _subCurCloud = node.subscribe<sensor_msgs::PointCloud2>
-						("/velodyne_cloud_registered", 2, &MotionRemoval::cloudHandler, this);
+						("/segmatch/source_representation", 2, &MotionRemoval::cloudHandler, this);
 
   return true;
 }
@@ -60,6 +60,7 @@ void MotionRemoval::spin()
   
 void MotionRemoval::cloudHandler(const sensor_msgs::PointCloud2ConstPtr& cloudMsg)
 {
+  std::cout << "get segmentation results!" << std::endl;
   if (count == 0) {
     pcl::fromROSMsg(*cloudMsg, *_prevCloud);
     _timePrevCloud = cloudMsg->header.stamp;
@@ -70,6 +71,10 @@ void MotionRemoval::cloudHandler(const sensor_msgs::PointCloud2ConstPtr& cloudMs
     pcl::fromROSMsg(*cloudMsg, *_curCloud);
     _timeCurCloud = cloudMsg->header.stamp;
     _newCurCloud = true;
+    
+    std::cout << "width:" << _curCloud->width << std::endl;
+    std::cout << "height: " << _curCloud->height << std::endl;
+    std::cout << "size: " << _curCloud->points.size() << std::endl;
     
     // publish the cloud
     publishCloudMsg(_pubPrevCloud, *_prevCloud, _timePrevCloud, "/camera_init");
@@ -98,8 +103,6 @@ void MotionRemoval::publishResult()
   
   
 }
-
-
 
 
 

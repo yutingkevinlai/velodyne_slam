@@ -22,7 +22,7 @@
   <node pkg="loam_velodyne" type="transformMaintenance" name="transformMaintenance" output="screen">
   </node>
 
-		<node pkg="loam_velodyne" type="motionRemoval" name="motionRemoval" output="screen">
+  <node pkg="loam_velodyne" type="motionRemoval" name="motionRemoval" output="screen">
   </node>
 
   <group if="$(arg rviz)">

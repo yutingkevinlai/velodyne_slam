@@ -21,13 +21,6 @@
 #include <pcl/visualization/cloud_viewer.h>
 #include <tf/transform_broadcaster.h>
 
-
-#include <segmatch/database.hpp>
-#include <segmatch/local_map.hpp>
-#include <segmatch/segmatch.hpp>
-
-//#include <segmatch_ros/common.hpp>
-
 namespace loam {
 
 /** \brief Implementation of the LOAM transformation maintenance component.

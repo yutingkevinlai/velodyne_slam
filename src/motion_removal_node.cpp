@@ -1,7 +1,6 @@
 #include <ros/ros.h>
 #include "loam_velodyne/MotionRemoval.h"
 
-
 /** Main node entry point. */
 int main(int argc, char **argv)
 {
@@ -13,7 +12,9 @@ int main(int argc, char **argv)
 
   if (motionRemoval.setup(node, privateNode)) {
     // initialization successful
-    motionRemoval.spin();
+    ros::spin();
   }
+  
+  
   return 0;
 }
