@@ -1,8 +1,6 @@
 #ifndef LOAM_MOTIONREMOVAL_H
 #define LOAM_MOTIONREMOVAL_H
 
-#include <iostream>
-#include <vector>
 #include "common.h"
 #include <ros/node_handle.h>
 #include <sensor_msgs/PointCloud2.h>
@@ -22,6 +20,13 @@
 #include <pcl/segmentation/extract_clusters.h>
 #include <pcl/visualization/cloud_viewer.h>
 #include <tf/transform_broadcaster.h>
+
+
+#include <segmatch/database.hpp>
+#include <segmatch/local_map.hpp>
+#include <segmatch/segmatch.hpp>
+
+//#include <segmatch_ros/common.hpp>
 
 namespace loam {
 
@@ -47,10 +52,6 @@ public:
 
   void cloudHandler(const sensor_msgs::PointCloud2ConstPtr& cloudMsg);
   
-  /** \brief Handler method for mapping odometry messages.
-   *
-   * @param odomAftMapped the new mapping odometry
-   */
   void process();
 
   void publishResult();
@@ -62,10 +63,6 @@ protected:
 
 private:
   int count; /// for counting in handler
-  
-  pcl::PointCloud<pcl::PointXYZ> _prevCloud;
-  pcl::PointCloud<pcl::PointXYZ> _curCloud; 
-
 
   ros::Time _timePrevCloud;      ///< time for previous cloud (cloud 3)
   ros::Time _timeCurCloud;       ///< time for current cloud (cloud 2)
@@ -74,7 +71,7 @@ private:
   pcl::PointCloud<pcl::PointXYZI>::Ptr _curCloud;
 
   bool _newPrevCloud;
-  bool _newCurCloud; 
+  bool _newCurCloud;
 
   ros::Publisher _pubPrevCloud;  ///< 
   ros::Publisher _pubCurCloud;

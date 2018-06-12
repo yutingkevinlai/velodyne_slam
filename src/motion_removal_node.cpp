@@ -13,7 +13,7 @@ int main(int argc, char **argv)
 
   if (motionRemoval.setup(node, privateNode)) {
     // initialization successful
-    ros::spin();
+    motionRemoval.spin();
   }
   return 0;
 }
