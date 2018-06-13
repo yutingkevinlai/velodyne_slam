@@ -30,8 +30,8 @@ find_package(catkin REQUIRED COMPONENTS
   roscpp
   rospy
   std_msgs
+  pcl_ros
   tf
-  segmapper
   )
 
 find_package(Eigen3 REQUIRED)
@@ -55,7 +55,7 @@ include_directories(
 link_directories(~/catkin_segmap/devel/lib)
 
 catkin_package(
-  CATKIN_DEPENDS geometry_msgs nav_msgs roscpp rospy std_msgs segmapper
+  CATKIN_DEPENDS geometry_msgs nav_msgs roscpp rospy std_msgs pcl_ros
   DEPENDS EIGEN3 PCL
   INCLUDE_DIRS include
   LIBRARIES loam 

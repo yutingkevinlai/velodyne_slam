@@ -6,12 +6,11 @@
 
 namespace loam {
 
-using std::cout;
-using std::endl;
+using namespace pcl_ros;
 
 MotionRemoval::MotionRemoval()
-    :   _prevCloud(new pcl::PointCloud<pcl::PointXYZI>()),
-        _curCloud(new pcl::PointCloud<pcl::PointXYZI>()),
+    :   _prevCloud(new pcl::PointCloud<pcl::PointXYZ>()),
+        _curCloud(new pcl::PointCloud<pcl::PointXYZ>()),
         _newPrevCloud(false),
         _newCurCloud(false),
         count(0)
@@ -61,31 +60,34 @@ void MotionRemoval::spin()
 void MotionRemoval::cloudHandler(const sensor_msgs::PointCloud2ConstPtr& cloudMsg)
 {
   std::cout << "get segmentation results!" << std::endl;
-  if (count == 0) {
-    pcl::fromROSMsg(*cloudMsg, *_prevCloud);
-    _timePrevCloud = cloudMsg->header.stamp;
-    _newPrevCloud = true;
-    count ++;
-  }
-  else {
-    pcl::fromROSMsg(*cloudMsg, *_curCloud);
-    _timeCurCloud = cloudMsg->header.stamp;
-    _newCurCloud = true;
-    
-    std::cout << "width:" << _curCloud->width << std::endl;
-    std::cout << "height: " << _curCloud->height << std::endl;
-    std::cout << "size: " << _curCloud->points.size() << std::endl;
-    
-    // publish the cloud
-    publishCloudMsg(_pubPrevCloud, *_prevCloud, _timePrevCloud, "/camera_init");
-    publishCloudMsg(_pubCurCloud, *_curCloud, _timePrevCloud, "/camera_init");
-    //std::cout << "prev: " << _timePrevCloud << ", cur: " << _timeCurCloud << std::endl;
+
+  pcl::fromROSMsg(*cloudMsg, *_curCloud);
+  _timeCurCloud = cloudMsg->header.stamp;
+  _newCurCloud = true;
+  
+  //std::cout << "width:" << _curCloud->width << std::endl;
+  //std::cout << "height: " << _curCloud->height << std::endl;
+  //std::cout << "size: " << _curCloud->points.size() << std::endl;
+  
+  // transform coordinate of the point cloud
+  //if (_tfListener.waitForTransform("camera_init", "world", _timeCurCloud, ros::Duration(0.2))) {
+  //  std::cout << "connect world to camera_init frame" << std::endl;
+  //  pcl_ros::transformPointCloud("camera_init", *_curCloud, *_curCloud, _tfListener);
+  //}
+  Eigen::Matrix4f transform = Eigen::Matrix4f::Identity();
+  pcl::transformPointCloud(*_curCloud, *_curCloud, transform);
+  
+  
+  std::cout << "publish the point cloud" << std::endl;
+  // publish the cloud
+  publishCloudMsg(_pubCurCloud, *_curCloud, _timeCurCloud, "/camera_init");
+  //std::cout << "prev: " << _timePrevCloud << ", cur: " << _timeCurCloud << std::endl;
 
     
 
-  }
-  *_prevCloud = *_curCloud;
-  _timePrevCloud = _timeCurCloud;
+  
+  //*_prevCloud = *_curCloud;
+  //_timePrevCloud = _timeCurCloud;
 }
 
 /* do the calculation here */

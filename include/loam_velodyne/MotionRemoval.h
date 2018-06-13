@@ -8,18 +8,12 @@
 #include <pcl/point_types.h>
 #include <pcl/ModelCoefficients.h>
 #include <pcl/io/pcd_io.h>
-#include <pcl/filters/extract_indices.h>
-#include <pcl/filters/voxel_grid.h>
-#include <pcl/filters/passthrough.h>
-#include <pcl/features/normal_3d.h>
+#include <pcl/common/transforms.h>
 #include <pcl/kdtree/kdtree.h>
-#include <pcl/sample_consensus/method_types.h>
-#include <pcl/sample_consensus/model_types.h>
-#include <pcl/segmentation/min_cut_segmentation.h>
-#include <pcl/segmentation/sac_segmentation.h>
-#include <pcl/segmentation/extract_clusters.h>
-#include <pcl/visualization/cloud_viewer.h>
+#include <pcl_ros/point_cloud.h>
+#include <pcl_ros/transforms.h>
 #include <tf/transform_broadcaster.h>
+#include <tf/transform_listener.h>
 
 namespace loam {
 
@@ -57,11 +51,13 @@ protected:
 private:
   int count; /// for counting in handler
 
+  tf::TransformListener _tfListener;
+
   ros::Time _timePrevCloud;      ///< time for previous cloud (cloud 3)
   ros::Time _timeCurCloud;       ///< time for current cloud (cloud 2)
   
-  pcl::PointCloud<pcl::PointXYZI>::Ptr _prevCloud;
-  pcl::PointCloud<pcl::PointXYZI>::Ptr _curCloud;
+  pcl::PointCloud<pcl::PointXYZ>::Ptr _prevCloud;
+  pcl::PointCloud<pcl::PointXYZ>::Ptr _curCloud;
 
   bool _newPrevCloud;
   bool _newCurCloud;
