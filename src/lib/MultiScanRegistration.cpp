@@ -160,6 +160,7 @@ void MultiScanRegistration::process(const pcl::PointCloud<pcl::PointXYZ>& laserC
   size_t cloudSize = laserCloudIn.size();
                     ROS_INFO("cloud size: %d", cloudSize);
   if(cloudSize <= 10000) return;
+
   // reset internal buffers and set IMU start state based on current scan time
   reset(scanTime);
 

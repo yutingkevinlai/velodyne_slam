@@ -12,6 +12,7 @@
     <remap from="/multi_scan_points" to="/kitti/velo/pointcloud" />
     <!--<remap from="/multi_scan_points" to="/segmatch/source_representation" />-->
     <!--<remap from="/imu/data" to="/kitti/oxts/imu" />-->
+    <!--<remap from="/multi_scan_points" to="/points_raw" />-->
   </node>
 
   <node pkg="loam_velodyne" type="laserOdometry" name="laserOdometry" output="screen" respawn="true">
@@ -24,12 +25,16 @@
 
   <node pkg="loam_velodyne" type="transformMaintenance" name="transformMaintenance" output="screen">
   </node>
-  <!--
-  <node pkg="loam_velodyne" type="motionRemoval" name="motionRemoval" output="screen">
-  </node>
-    -->
+
+<!--<node pkg="loam_velodyne" type="motionRemoval" name="motionRemoval" output="screen">
+  </node>-->
+
   <group if="$(arg rviz)">
     <node launch-prefix="nice" pkg="rviz" type="rviz" name="rviz" args="-d $(find loam_velodyne)/rviz_cfg/loam_velodyne.rviz" />
   </group>
+  
+  <!--
+  <include file="/home/kevin/catkin_segmap/src/segmap/segmapper/launch/kitti/kitti_get_segments.launch"/>
+  -->
 
 </launch>
