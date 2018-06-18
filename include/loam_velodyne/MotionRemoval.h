@@ -4,6 +4,7 @@
 #include "common.h"
 #include <ros/node_handle.h>
 #include <sensor_msgs/PointCloud2.h>
+#include <nav_msgs/Odometry.h>
 #include <pcl/point_cloud.h>
 #include <pcl/point_types.h>
 #include <pcl/ModelCoefficients.h>
@@ -12,8 +13,10 @@
 #include <pcl/kdtree/kdtree.h>
 #include <pcl_ros/point_cloud.h>
 #include <pcl_ros/transforms.h>
+#include <tf/transform_datatypes.h>
 #include <tf/transform_broadcaster.h>
 #include <tf/transform_listener.h>
+#include <tf2_msgs/TFMessage.h>
 
 namespace loam {
 
@@ -37,16 +40,16 @@ public:
   /** \brief Process incoming messages in a loop until shutdown (used in active mode). */
   void spin();
 
-  void cloudHandler(const sensor_msgs::PointCloud2ConstPtr& cloudMsg);
-  
+  void laserCloudSurroundHandler(const sensor_msgs::PointCloud2ConstPtr& cloudMsg);
+  void velodyneCloud3Handler(const sensor_msgs::PointCloud2ConstPtr& cloudMsg);
+  void velodyneCloud2Handler(const sensor_msgs::PointCloud2ConstPtr& cloudMsg);
+  void velodyneCloudRegisteredHandler(const sensor_msgs::PointCloud2ConstPtr& cloudMsg);
+  void laserOdomToInitHandler(const nav_msgs::OdometryConstPtr& odomMsg);
+  void tfHandler(const tf2_msgs::TFMessageConstPtr& tfMsg);
+
   void process();
 
   void publishResult();
-
-/*
-protected:
-  void transformAssociateToMap();
-*/
 
 private:
   int count; /// for counting in handler
@@ -57,17 +60,28 @@ private:
   ros::Time _timeCurCloud;       ///< time for current cloud (cloud 2)
   
   pcl::PointCloud<pcl::PointXYZ>::Ptr _prevCloud;
-  pcl::PointCloud<pcl::PointXYZ>::Ptr _curCloud;
+  pcl::PointCloud<pcl::PointXYZI>::Ptr _curCloud;
+  nav_msgs::Odometry _odom;      ///< mapping odometry message
 
   bool _newPrevCloud;
   bool _newCurCloud;
 
-  ros::Publisher _pubPrevCloud;  ///< 
-  ros::Publisher _pubCurCloud;
-  
-  ros::Subscriber _subPrevCloud;    ///< previous cloud subscriber
-  ros::Subscriber _subCurCloud;    ///< current cloud subscriber
+  Eigen::Matrix4f _transform;
+  ros::Subscriber _subVelodyneCloud3;
+  ros::Subscriber _subVelodyneCloud2;
+  ros::Subscriber _subVelodyneCloudRegistered;
+  ros::Subscriber _subLaserCloudSurround;
+  ros::Subscriber _subLaserOdomToInit;
+  ros::Subscriber _subTf;
 
+  ros::Publisher _pubVelodyneCloud3;
+  ros::Publisher _pubVelodyneCloud2;
+  ros::Publisher _pubVelodyneCloudRegistered;
+  ros::Publisher _pubLaserCloudSurround;
+  ros::Publisher _pubLaserOdomToInit;
+
+  tf::TransformBroadcaster _tfBroadcaster;
+  tf::StampedTransform _stampTf;
 };
 
 } // end namespace loam

@@ -211,6 +211,8 @@ private:
   ros::Subscriber _subSurfPointsLessFlat;     ///< less flat surface cloud message subscriber
   ros::Subscriber _subLaserCloudFullRes;      ///< full resolution cloud message subscriber
   ros::Subscriber _subImuTrans;               ///< IMU transformation information message subscriber
+
+  Eigen::Matrix4f _invTransform;
 };
 
 } // end namespace loam

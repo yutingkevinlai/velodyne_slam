@@ -76,6 +76,11 @@ LaserOdometry::LaserOdometry(const float& scanPeriod,
 
   _laserOdometryTrans.frame_id_ = "/camera_init";
   _laserOdometryTrans.child_frame_id_ = "/laser_odom";
+  
+  _invTransform <<  0,  1,  0,  0,
+                    0,  0,  1,  0,
+                    1,  0,  0,  0,
+                    0,  0,  0,  1;
 }
 
 
@@ -317,6 +322,9 @@ void LaserOdometry::laserCloudSharpHandler(const sensor_msgs::PointCloud2ConstPt
 
   _cornerPointsSharp->clear();
   pcl::fromROSMsg(*cornerPointsSharpMsg, *_cornerPointsSharp);
+//
+  pcl::transformPointCloud(*_cornerPointsSharp, *_cornerPointsSharp, _invTransform);
+//
   std::vector<int> indices;
   pcl::removeNaNFromPointCloud(*_cornerPointsSharp, *_cornerPointsSharp, indices);
   _newCornerPointsSharp = true;
@@ -330,6 +338,9 @@ void LaserOdometry::laserCloudLessSharpHandler(const sensor_msgs::PointCloud2Con
 
   _cornerPointsLessSharp->clear();
   pcl::fromROSMsg(*cornerPointsLessSharpMsg, *_cornerPointsLessSharp);
+//
+  pcl::transformPointCloud(*_cornerPointsLessSharp, *_cornerPointsLessSharp, _invTransform);
+//
   std::vector<int> indices;
   pcl::removeNaNFromPointCloud(*_cornerPointsLessSharp, *_cornerPointsLessSharp, indices);
   _newCornerPointsLessSharp = true;
@@ -343,6 +354,9 @@ void LaserOdometry::laserCloudFlatHandler(const sensor_msgs::PointCloud2ConstPtr
 
   _surfPointsFlat->clear();
   pcl::fromROSMsg(*surfPointsFlatMsg, *_surfPointsFlat);
+//
+  pcl::transformPointCloud(*_surfPointsFlat, *_surfPointsFlat, _invTransform);
+//
   std::vector<int> indices;
   pcl::removeNaNFromPointCloud(*_surfPointsFlat, *_surfPointsFlat, indices);
   _newSurfPointsFlat = true;
@@ -356,6 +370,9 @@ void LaserOdometry::laserCloudLessFlatHandler(const sensor_msgs::PointCloud2Cons
 
   _surfPointsLessFlat->clear();
   pcl::fromROSMsg(*surfPointsLessFlatMsg, *_surfPointsLessFlat);
+//
+  pcl::transformPointCloud(*_surfPointsLessFlat, *_surfPointsLessFlat, _invTransform);
+//
   std::vector<int> indices;
   pcl::removeNaNFromPointCloud(*_surfPointsLessFlat, *_surfPointsLessFlat, indices);
   _newSurfPointsLessFlat = true;
@@ -369,6 +386,9 @@ void LaserOdometry::laserCloudFullResHandler(const sensor_msgs::PointCloud2Const
 
   _laserCloud->clear();
   pcl::fromROSMsg(*laserCloudFullResMsg, *_laserCloud);
+//
+  pcl::transformPointCloud(*_laserCloud, *_laserCloud, _invTransform);
+//
   std::vector<int> indices;
   pcl::removeNaNFromPointCloud(*_laserCloud, *_laserCloud, indices);
   _newLaserCloudFullRes = true;
@@ -382,6 +402,9 @@ void LaserOdometry::imuTransHandler(const sensor_msgs::PointCloud2ConstPtr& imuT
 
   pcl::PointCloud<pcl::PointXYZ> imuTrans;
   pcl::fromROSMsg(*imuTransMsg, imuTrans);
+//
+  pcl::transformPointCloud(imuTrans, imuTrans, _invTransform);
+//
 
   _imuPitchStart = imuTrans.points[0].x;
   _imuYawStart = imuTrans.points[0].y;
@@ -898,9 +921,23 @@ void LaserOdometry::publishResult()
   _laserOdometryMsg.pose.pose.position.z = _transformSum.pos.z();
   _pubLaserOdometry.publish(_laserOdometryMsg);
 
+///
+        float x, y, z, w;
+        x = _transformSum.pos.z();
+        y = _transformSum.pos.x();
+        z = _transformSum.pos.y();
+        tf::Vector3 vec(x,y,z);
+        x = geoQuat.x;
+        y = -geoQuat.y;
+        z = -geoQuat.z;
+        w = geoQuat.w;
+        tf::Quaternion quat(x,y,z,w);
+///
+//  _aftMappedTrans.setRotation(tf::Quaternion(-geoQuat.y, -geoQuat.z, geoQuat.x, geoQuat.w));
   _laserOdometryTrans.stamp_ = _timeSurfPointsLessFlat;
-  _laserOdometryTrans.setRotation(tf::Quaternion(-geoQuat.y, -geoQuat.z, geoQuat.x, geoQuat.w));
-  _laserOdometryTrans.setOrigin(tf::Vector3( _transformSum.pos.x(), _transformSum.pos.y(), _transformSum.pos.z()) );
+  _laserOdometryTrans.setRotation(quat);
+//  _laserOdometryTrans.setOrigin(tf::Vector3( _transformSum.pos.x(), _transformSum.pos.y(), _transformSum.pos.z()) );
+  _laserOdometryTrans.setOrigin(vec);
   _tfBroadcaster.sendTransform(_laserOdometryTrans);
 
 

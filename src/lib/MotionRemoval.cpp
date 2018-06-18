@@ -9,13 +9,15 @@ namespace loam {
 using namespace pcl_ros;
 
 MotionRemoval::MotionRemoval()
-    :   _prevCloud(new pcl::PointCloud<pcl::PointXYZ>()),
-        _curCloud(new pcl::PointCloud<pcl::PointXYZ>()),
+      : _curCloud(new pcl::PointCloud<pcl::PointXYZI>()),
         _newPrevCloud(false),
         _newCurCloud(false),
         count(0)
 {
-
+  _transform << 0,  0,  1,  0,
+                1,  0,  0,  0,
+                0,  1,  0,  0,
+                0,  0,  0,  1;
 }
 
 MotionRemoval::~MotionRemoval()
@@ -26,15 +28,18 @@ MotionRemoval::~MotionRemoval()
 bool MotionRemoval::setup(ros::NodeHandle& node,
                           ros::NodeHandle& privateNode)
 {
-  // subscribe to point cloud 2 and 3 topics may not need
-  //  _subPrevCloud = node.subscribe<sensor_msgs::PointCloud2>
-  //      ("/velodyne_cloud_3", 2, &MotionRemoval::prevCloudHandler, this);
-  
-  _pubPrevCloud = node.advertise<sensor_msgs::PointCloud2> ("/prev_cloud", 2);
-  _pubCurCloud = node.advertise<sensor_msgs::PointCloud2> ("/cur_cloud", 2);
+  _pubVelodyneCloud3 = node.advertise<sensor_msgs::PointCloud2> ("/rotate/velodyne_cloud_3", 2);
+  _pubVelodyneCloud2 = node.advertise<sensor_msgs::PointCloud2> ("/rotate/velodyne_cloud_2", 2);
+  _pubVelodyneCloudRegistered = node.advertise<sensor_msgs::PointCloud2> ("/rotate/velodyne_cloud_registered", 2);
+  _pubLaserCloudSurround = node.advertise<sensor_msgs::PointCloud2> ("/rotate/laser_cloud_surround", 2);
+  _pubLaserOdomToInit = node.advertise<nav_msgs::Odometry> ("rotate/laser_odom_to_init", 5); 
 
-  _subCurCloud = node.subscribe<sensor_msgs::PointCloud2>
-						("/segmatch/source_representation", 2, &MotionRemoval::cloudHandler, this);
+  _subVelodyneCloud3 = node.subscribe<sensor_msgs::PointCloud2>	("/velodyne_cloud_3", 2, &MotionRemoval::velodyneCloud3Handler, this);
+  _subVelodyneCloud2 = node.subscribe<sensor_msgs::PointCloud2>	("/velodyne_cloud_2", 2, &MotionRemoval::velodyneCloud3Handler, this);
+  _subVelodyneCloudRegistered = node.subscribe<sensor_msgs::PointCloud2> ("/laser_cloud_surround", 2, &MotionRemoval::velodyneCloudRegisteredHandler, this);
+  _subLaserCloudSurround = node.subscribe<sensor_msgs::PointCloud2> ("/laser_cloud_surround", 2, &MotionRemoval::laserCloudSurroundHandler, this);
+  _subLaserOdomToInit = node.subscribe<nav_msgs::Odometry> ("/laser_odom_to_init", 5, &MotionRemoval::laserOdomToInitHandler, this);
+  _subTf = node.subscribe<tf2_msgs::TFMessage> ("/tf", 10, &MotionRemoval::tfHandler, this);
 
   return true;
 }
@@ -50,53 +55,80 @@ void MotionRemoval::spin()
     ros::spinOnce();
 
     // try processing new data
-    //process();
+    process();
 
     status = ros::ok();
     rate.sleep();
   }
 }
   
-void MotionRemoval::cloudHandler(const sensor_msgs::PointCloud2ConstPtr& cloudMsg)
+void MotionRemoval::laserCloudSurroundHandler(const sensor_msgs::PointCloud2ConstPtr& cloudMsg)
 {
-  std::cout << "get segmentation results!" << std::endl;
-
   pcl::fromROSMsg(*cloudMsg, *_curCloud);
   _timeCurCloud = cloudMsg->header.stamp;
-  _newCurCloud = true;
-  
-  //std::cout << "width:" << _curCloud->width << std::endl;
-  //std::cout << "height: " << _curCloud->height << std::endl;
-  //std::cout << "size: " << _curCloud->points.size() << std::endl;
-  
-  // transform coordinate of the point cloud
-  //if (_tfListener.waitForTransform("camera_init", "world", _timeCurCloud, ros::Duration(0.2))) {
-  //  std::cout << "connect world to camera_init frame" << std::endl;
-  //  pcl_ros::transformPointCloud("camera_init", *_curCloud, *_curCloud, _tfListener);
-  //}
-  Eigen::Matrix4f transform = Eigen::Matrix4f::Identity();
-  pcl::transformPointCloud(*_curCloud, *_curCloud, transform);
-  
-  
-  std::cout << "publish the point cloud" << std::endl;
-  // publish the cloud
-  publishCloudMsg(_pubCurCloud, *_curCloud, _timeCurCloud, "/camera_init");
-  //std::cout << "prev: " << _timePrevCloud << ", cur: " << _timeCurCloud << std::endl;
 
-    
-
-  
-  //*_prevCloud = *_curCloud;
-  //_timePrevCloud = _timeCurCloud;
+  pcl::transformPointCloud(*_curCloud, *_curCloud, _transform);
+  publishCloudMsg(_pubLaserCloudSurround, *_curCloud, _timeCurCloud, "/camera_init");
 }
 
+void MotionRemoval::velodyneCloud3Handler(const sensor_msgs::PointCloud2ConstPtr& cloudMsg)
+{
+  pcl::fromROSMsg(*cloudMsg, *_curCloud);
+  _timeCurCloud = cloudMsg->header.stamp;
+  pcl::transformPointCloud(*_curCloud, *_curCloud, _transform);
+  publishCloudMsg(_pubVelodyneCloud3, *_curCloud, _timeCurCloud, "/rotation/camera");
+}
+
+void MotionRemoval::velodyneCloud2Handler(const sensor_msgs::PointCloud2ConstPtr& cloudMsg)
+{
+  pcl::fromROSMsg(*cloudMsg, *_curCloud);
+  _timeCurCloud = cloudMsg->header.stamp;
+  pcl::transformPointCloud(*_curCloud, *_curCloud, _transform);
+  publishCloudMsg(_pubVelodyneCloud2, *_curCloud, _timeCurCloud, "/rotation/camera");
+}
+
+void MotionRemoval::velodyneCloudRegisteredHandler(const sensor_msgs::PointCloud2ConstPtr& cloudMsg)
+{
+  pcl::fromROSMsg(*cloudMsg, *_curCloud);
+  _timeCurCloud = cloudMsg->header.stamp;
+  pcl::transformPointCloud(*_curCloud, *_curCloud, _transform);
+  publishCloudMsg(_pubLaserCloudSurround, *_curCloud, _timeCurCloud, "/camera_init");
+}
+
+void MotionRemoval::laserOdomToInitHandler(const nav_msgs::OdometryConstPtr& odomMsg)
+{
+  
+}
+void MotionRemoval::tfHandler(const tf2_msgs::TFMessageConstPtr& tfMsg)
+{
+    std::string frame_id = tfMsg->transforms[0].header.frame_id;
+    std::string child_frame_id = tfMsg->transforms[0].child_frame_id;
+    //ROS_INFO("frame_id: %s",frame_id.c_str());
+    //ROS_INFO("child_frame_id: %s",child_frame_id.c_str());
+    if(frame_id=="/camera_init" && (child_frame_id=="/camera" || child_frame_id=="/laser_odom" || child_frame_id=="/aft_mapped"))
+    {
+        float x, y, z, w;
+        x = tfMsg->transforms[0].transform.translation.x;
+        y = -tfMsg->transforms[0].transform.translation.z;
+        z = tfMsg->transforms[0].transform.translation.y;
+        _stampTf.setOrigin(tf::Vector3(x,y,z));
+        x = tfMsg->transforms[0].transform.rotation.x;
+        y = tfMsg->transforms[0].transform.rotation.z;
+        z = tfMsg->transforms[0].transform.rotation.y;
+        w = tfMsg->transforms[0].transform.rotation.w;
+        tf::Quaternion transTmp;
+        transTmp.setRPY(0,M_PI/2,0);
+        _stampTf.setRotation(tf::Quaternion(x,y,z,w));
+        _stampTf.frame_id_ = frame_id;
+        _stampTf.child_frame_id_ = "/rotation" + child_frame_id;
+        _stampTf.stamp_ = tfMsg->transforms[0].header.stamp;
+        _tfBroadcaster.sendTransform(_stampTf);
+    }
+}
 /* do the calculation here */
 void MotionRemoval::process()
 {
-  
 
-
-  //std::cout << "process" << std::endl;
 }
 
 void MotionRemoval::publishResult()

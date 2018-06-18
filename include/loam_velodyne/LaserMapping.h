@@ -238,6 +238,7 @@ private:
   ros::Subscriber _subLaserOdometry;          ///< laser odometry message subscriber
   ros::Subscriber _subImu;                    ///< IMU message subscriber
 
+  Eigen::Matrix4f _invTransform;
 };
 
 } // end namespace loam

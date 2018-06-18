@@ -37,7 +37,7 @@
 #include <sensor_msgs/PointCloud2.h>
 #include <pcl_conversions/pcl_conversions.h>
 #include <pcl/point_types.h>
-
+#include <pcl/common/transforms.h>
 
 namespace loam {
 
@@ -55,11 +55,21 @@ inline void publishCloudMsg(ros::Publisher& publisher,
                             const ros::Time& stamp,
                             std::string frameID) {
   sensor_msgs::PointCloud2 msg;
-  pcl::toROSMsg(cloud, msg);
+  
+  Eigen::Matrix4f _transform;
+  _transform << 0,  0,  1,  0,
+                1,  0,  0,  0,
+                0,  1,  0,  0,
+                0,  0,  0,  1;
+  pcl::PointCloud<PointT> cloud_tmp;
+  pcl::transformPointCloud(cloud, cloud_tmp, _transform);
+  pcl::toROSMsg(cloud_tmp, msg);
   msg.header.stamp = stamp;
   msg.header.frame_id = frameID;
   publisher.publish(msg);
 }
+
+                
 
 } // end namespace loam
 

@@ -105,6 +105,11 @@ LaserMapping::LaserMapping(const float& scanPeriod,
   _downSizeFilterCorner.setLeafSize(0.2, 0.2, 0.2);
   _downSizeFilterSurf.setLeafSize(0.4, 0.4, 0.4);
   _downSizeFilterMap.setLeafSize(0.6, 0.6, 0.6);
+
+  _invTransform <<  0,  1,  0,  0,
+                    0,  0,  1,  0,
+                    1,  0,  0,  0,
+                    0,  0,  0,  1;
 }
 
 
@@ -347,6 +352,9 @@ void LaserMapping::laserCloudCornerLastHandler(const sensor_msgs::PointCloud2Con
 
   _laserCloudCornerLast->clear();
   pcl::fromROSMsg(*cornerPointsLastMsg, *_laserCloudCornerLast);
+//
+  pcl::transformPointCloud(*_laserCloudCornerLast, *_laserCloudCornerLast, _invTransform);
+//
 
   _newLaserCloudCornerLast = true;
 }
@@ -359,6 +367,9 @@ void LaserMapping::laserCloudSurfLastHandler(const sensor_msgs::PointCloud2Const
 
   _laserCloudSurfLast->clear();
   pcl::fromROSMsg(*surfacePointsLastMsg, *_laserCloudSurfLast);
+//
+  pcl::transformPointCloud(*_laserCloudSurfLast, *_laserCloudSurfLast, _invTransform);
+//
 
   _newLaserCloudSurfLast = true;
 }
@@ -371,6 +382,9 @@ void LaserMapping::laserCloudFullResHandler(const sensor_msgs::PointCloud2ConstP
 
   _laserCloudFullRes->clear();
   pcl::fromROSMsg(*laserCloudFullResMsg, *_laserCloudFullRes);
+//
+  pcl::transformPointCloud(*_laserCloudFullRes, *_laserCloudFullRes, _invTransform);
+//
 
   _newLaserCloudFullRes = true;
 }
@@ -1096,12 +1110,26 @@ void LaserMapping::publishResult()
   _odomAftMapped.twist.twist.linear.y = _transformBefMapped.pos.y();
   _odomAftMapped.twist.twist.linear.z = _transformBefMapped.pos.z();
   _pubOdomAftMapped.publish(_odomAftMapped);
-
+///
+        float x, y, z, w;
+        x = _transformAftMapped.pos.z();
+        y = _transformAftMapped.pos.x();
+        z = _transformAftMapped.pos.y();
+        tf::Vector3 vec(x,y,z);
+        x = geoQuat.x;
+        y = -geoQuat.y;
+        z = -geoQuat.z;
+        w = geoQuat.w;
+        tf::Quaternion quat(x,y,z,w);
+///
   _aftMappedTrans.stamp_ = _timeLaserOdometry;
-  _aftMappedTrans.setRotation(tf::Quaternion(-geoQuat.y, -geoQuat.z, geoQuat.x, geoQuat.w));
-  _aftMappedTrans.setOrigin(tf::Vector3(_transformAftMapped.pos.x(),
+//  _aftMappedTrans.setRotation(tf::Quaternion(-geoQuat.y, -geoQuat.z, geoQuat.x, geoQuat.w));
+  _aftMappedTrans.setRotation(quat);
+/*  _aftMappedTrans.setOrigin(tf::Vector3(_transformAftMapped.pos.x(),
                                         _transformAftMapped.pos.y(),
                                         _transformAftMapped.pos.z()));
+*/
+  _aftMappedTrans.setOrigin(vec);
   _tfBroadcaster.sendTransform(_aftMappedTrans);
 }
 
