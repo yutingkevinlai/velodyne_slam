@@ -912,18 +912,25 @@ void LaserOdometry::publishResult()
                                                                               -_transformSum.rot_y.rad());
 
   _laserOdometryMsg.header.stamp = _timeSurfPointsLessFlat;
-  _laserOdometryMsg.pose.pose.orientation.x = -geoQuat.y;
+/*  _laserOdometryMsg.pose.pose.orientation.x = -geoQuat.y;
   _laserOdometryMsg.pose.pose.orientation.y = -geoQuat.z;
   _laserOdometryMsg.pose.pose.orientation.z = geoQuat.x;
   _laserOdometryMsg.pose.pose.orientation.w = geoQuat.w;
   _laserOdometryMsg.pose.pose.position.x = _transformSum.pos.x();
   _laserOdometryMsg.pose.pose.position.y = _transformSum.pos.y();
-  _laserOdometryMsg.pose.pose.position.z = _transformSum.pos.z();
+  _laserOdometryMsg.pose.pose.position.z = _transformSum.pos.z();*/
+  _laserOdometryMsg.pose.pose.orientation.x = geoQuat.x;
+  _laserOdometryMsg.pose.pose.orientation.y = -geoQuat.y;
+  _laserOdometryMsg.pose.pose.orientation.z = -geoQuat.z;
+  _laserOdometryMsg.pose.pose.orientation.w = geoQuat.w;
+  _laserOdometryMsg.pose.pose.position.x = _transformSum.pos.z();
+  _laserOdometryMsg.pose.pose.position.y = _transformSum.pos.x();
+  _laserOdometryMsg.pose.pose.position.z = _transformSum.pos.y();
   _pubLaserOdometry.publish(_laserOdometryMsg);
 
 ///
         float x, y, z, w;
-        x = _transformSum.pos.z();
+        x = _transformSum.pos.z();  
         y = _transformSum.pos.x();
         z = _transformSum.pos.y();
         tf::Vector3 vec(x,y,z);
@@ -933,11 +940,11 @@ void LaserOdometry::publishResult()
         w = geoQuat.w;
         tf::Quaternion quat(x,y,z,w);
 ///
-//  _aftMappedTrans.setRotation(tf::Quaternion(-geoQuat.y, -geoQuat.z, geoQuat.x, geoQuat.w));
+  _laserOdometryTrans.setRotation(tf::Quaternion(-geoQuat.y, -geoQuat.z, geoQuat.x, geoQuat.w));
   _laserOdometryTrans.stamp_ = _timeSurfPointsLessFlat;
-  _laserOdometryTrans.setRotation(quat);
-//  _laserOdometryTrans.setOrigin(tf::Vector3( _transformSum.pos.x(), _transformSum.pos.y(), _transformSum.pos.z()) );
-  _laserOdometryTrans.setOrigin(vec);
+//  _laserOdometryTrans.setRotation(quat);
+  _laserOdometryTrans.setOrigin(tf::Vector3( _transformSum.pos.x(), _transformSum.pos.y(), _transformSum.pos.z()) );
+//  _laserOdometryTrans.setOrigin(vec);
   _tfBroadcaster.sendTransform(_laserOdometryTrans);
 
 

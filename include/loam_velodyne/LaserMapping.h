@@ -149,6 +149,16 @@ protected:
   void transformUpdate();
   void pointAssociateToMap(const pcl::PointXYZI& pi, pcl::PointXYZI& po);
   void pointAssociateTobeMapped(const pcl::PointXYZI& pi, pcl::PointXYZI& po);
+  
+
+  /************************/
+  void removeMovingObject();
+  void calcThetaPhiRatio();
+  int getPhiIndOfRadius(double phi);
+  int getThetaIndOfRadius(double theta);
+  void smoothRadiusScan();
+
+  /************************/
 
   /** \brief Publish the current result via the respective topics. */
   void publishResult();
@@ -180,6 +190,14 @@ private:
   const size_t _laserCloudDepth;
   const size_t _laserCloudNum;
 
+  double _phiRatio;
+  double _thetaRatio;
+  double** _radius;
+  int _maxThetaInd;
+  int _maxPhiInd;
+  double _minPhi;
+  double _maxPhi;
+
   pcl::PointCloud<pcl::PointXYZI>::Ptr _laserCloudCornerLast;   ///< last corner points cloud
   pcl::PointCloud<pcl::PointXYZI>::Ptr _laserCloudSurfLast;     ///< last surface points cloud
   pcl::PointCloud<pcl::PointXYZI>::Ptr _laserCloudFullRes;      ///< last full resolution cloud
@@ -193,6 +211,8 @@ private:
   pcl::PointCloud<pcl::PointXYZI>::Ptr _laserCloudSurroundDS;     ///< down sampled
   pcl::PointCloud<pcl::PointXYZI>::Ptr _laserCloudCornerFromMap;
   pcl::PointCloud<pcl::PointXYZI>::Ptr _laserCloudSurfFromMap;
+
+  pcl::PointCloud<pcl::PointXYZI>::Ptr _accumulatedRemoved;
 
   std::vector<pcl::PointCloud<pcl::PointXYZI>::Ptr> _laserCloudCornerArray;
   std::vector<pcl::PointCloud<pcl::PointXYZI>::Ptr> _laserCloudSurfArray;
@@ -229,6 +249,7 @@ private:
 
   ros::Publisher _pubLaserCloudSurround;    ///< map cloud message publisher
   ros::Publisher _pubLaserCloudFullRes;     ///< current full resolution cloud message publisher
+  ros::Publisher _pubLaserRemoved;
   ros::Publisher _pubOdomAftMapped;         ///< mapping odometry publisher
   tf::TransformBroadcaster _tfBroadcaster;  ///< mapping odometry transform broadcaster
 

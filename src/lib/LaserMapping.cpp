@@ -38,6 +38,7 @@
 #include <Eigen/Eigenvalues>
 #include <Eigen/QR>
 
+#include <pcl/filters/extract_indices.h>
 
 namespace loam {
 
@@ -65,6 +66,8 @@ LaserMapping::LaserMapping(const float& scanPeriod,
         _laserCloudHeight(11),
         _laserCloudDepth(21),
         _laserCloudNum(_laserCloudWidth * _laserCloudHeight * _laserCloudDepth),
+        _thetaRatio(-1),
+        _phiRatio(-1),
         _laserCloudCornerLast(new pcl::PointCloud<pcl::PointXYZI>()),
         _laserCloudSurfLast(new pcl::PointCloud<pcl::PointXYZI>()),
         _laserCloudFullRes(new pcl::PointCloud<pcl::PointXYZI>()),
@@ -75,7 +78,8 @@ LaserMapping::LaserMapping(const float& scanPeriod,
         _laserCloudSurround(new pcl::PointCloud<pcl::PointXYZI>()),
         _laserCloudSurroundDS(new pcl::PointCloud<pcl::PointXYZI>()),
         _laserCloudCornerFromMap(new pcl::PointCloud<pcl::PointXYZI>()),
-        _laserCloudSurfFromMap(new pcl::PointCloud<pcl::PointXYZI>())
+        _laserCloudSurfFromMap(new pcl::PointCloud<pcl::PointXYZI>()),
+        _accumulatedRemoved(new pcl::PointCloud<pcl::PointXYZI>())
 {
   // initialize mapping odometry and odometry tf messages
   _odomAftMapped.header.frame_id = "/camera_init";
@@ -195,6 +199,7 @@ bool LaserMapping::setup(ros::NodeHandle& node,
   // advertise laser mapping topics
   _pubLaserCloudSurround = node.advertise<sensor_msgs::PointCloud2> ("/laser_cloud_surround", 1);
   _pubLaserCloudFullRes = node.advertise<sensor_msgs::PointCloud2> ("/velodyne_cloud_registered", 2);
+  _pubLaserRemoved = node.advertise<sensor_msgs::PointCloud2> ("/loam/removed_points", 2);
   _pubOdomAftMapped = node.advertise<nav_msgs::Odometry> ("/aft_mapped_to_init", 5);
 
 
@@ -384,6 +389,7 @@ void LaserMapping::laserCloudFullResHandler(const sensor_msgs::PointCloud2ConstP
   pcl::fromROSMsg(*laserCloudFullResMsg, *_laserCloudFullRes);
 //
   pcl::transformPointCloud(*_laserCloudFullRes, *_laserCloudFullRes, _invTransform);
+  if(_thetaRatio == -1 && _phiRatio == -1) calcThetaPhiRatio();
 //
 
   _newLaserCloudFullRes = true;
@@ -397,15 +403,16 @@ void LaserMapping::laserOdometryHandler(const nav_msgs::Odometry::ConstPtr& lase
 
   double roll, pitch, yaw;
   geometry_msgs::Quaternion geoQuat = laserOdometry->pose.pose.orientation;
-  tf::Matrix3x3(tf::Quaternion(geoQuat.z, -geoQuat.x, -geoQuat.y, geoQuat.w)).getRPY(roll, pitch, yaw);
+//  tf::Matrix3x3(tf::Quaternion(geoQuat.z, -geoQuat.x, -geoQuat.y, geoQuat.w)).getRPY(roll, pitch, yaw);
+  tf::Matrix3x3(tf::Quaternion(geoQuat.x, -geoQuat.y, -geoQuat.z, geoQuat.w)).getRPY(roll, pitch, yaw);
 
   _transformSum.rot_x = -pitch;
   _transformSum.rot_y = -yaw;
   _transformSum.rot_z = roll;
 
-  _transformSum.pos.x() = float(laserOdometry->pose.pose.position.x);
-  _transformSum.pos.y() = float(laserOdometry->pose.pose.position.y);
-  _transformSum.pos.z() = float(laserOdometry->pose.pose.position.z);
+  _transformSum.pos.x() = float(laserOdometry->pose.pose.position.y);
+  _transformSum.pos.y() = float(laserOdometry->pose.pose.position.z);
+  _transformSum.pos.z() = float(laserOdometry->pose.pose.position.x);
 
   _newLaserOdometry = true;
 }
@@ -753,6 +760,9 @@ void LaserMapping::process()
     _laserCloudSurfArray[ind].swap(_laserCloudSurfDSArray[ind]);
   }
 
+  ////
+  removeMovingObject();
+  ////
 
   // publish result
   publishResult();
@@ -1088,6 +1098,9 @@ void LaserMapping::publishResult()
   // publish transformed full resolution input cloud
   publishCloudMsg(_pubLaserCloudFullRes, *_laserCloudFullRes, _timeLaserOdometry, "/camera_init");
 
+  //////
+  publishCloudMsg(_pubLaserRemoved,*_accumulatedRemoved, _timeLaserOdometry, "/camera_init");
+//////////////////////
 
   // publish odometry after mapped transformations
   geometry_msgs::Quaternion geoQuat = tf::createQuaternionMsgFromRollPitchYaw
@@ -1096,7 +1109,7 @@ void LaserMapping::publishResult()
         -_transformAftMapped.rot_y.rad());
 
   _odomAftMapped.header.stamp = _timeLaserOdometry;
-  _odomAftMapped.pose.pose.orientation.x = -geoQuat.y;
+/*  _odomAftMapped.pose.pose.orientation.x = -geoQuat.y;
   _odomAftMapped.pose.pose.orientation.y = -geoQuat.z;
   _odomAftMapped.pose.pose.orientation.z = geoQuat.x;
   _odomAftMapped.pose.pose.orientation.w = geoQuat.w;
@@ -1108,7 +1121,20 @@ void LaserMapping::publishResult()
   _odomAftMapped.twist.twist.angular.z = _transformBefMapped.rot_z.rad();
   _odomAftMapped.twist.twist.linear.x = _transformBefMapped.pos.x();
   _odomAftMapped.twist.twist.linear.y = _transformBefMapped.pos.y();
-  _odomAftMapped.twist.twist.linear.z = _transformBefMapped.pos.z();
+  _odomAftMapped.twist.twist.linear.z = _transformBefMapped.pos.z();*/
+  _odomAftMapped.pose.pose.orientation.x = geoQuat.x;
+  _odomAftMapped.pose.pose.orientation.y = -geoQuat.y;
+  _odomAftMapped.pose.pose.orientation.z = -geoQuat.z;
+  _odomAftMapped.pose.pose.orientation.w = geoQuat.w;
+  _odomAftMapped.pose.pose.position.x = _transformAftMapped.pos.z();
+  _odomAftMapped.pose.pose.position.y = _transformAftMapped.pos.x();
+  _odomAftMapped.pose.pose.position.z = _transformAftMapped.pos.y();
+  _odomAftMapped.twist.twist.angular.x = _transformBefMapped.rot_z.rad();
+  _odomAftMapped.twist.twist.angular.y = _transformBefMapped.rot_x.rad();
+  _odomAftMapped.twist.twist.angular.z = _transformBefMapped.rot_y.rad();
+  _odomAftMapped.twist.twist.linear.x = _transformBefMapped.pos.z();
+  _odomAftMapped.twist.twist.linear.y = _transformBefMapped.pos.x();
+  _odomAftMapped.twist.twist.linear.z = _transformBefMapped.pos.y();
   _pubOdomAftMapped.publish(_odomAftMapped);
 ///
         float x, y, z, w;
@@ -1131,6 +1157,208 @@ void LaserMapping::publishResult()
 */
   _aftMappedTrans.setOrigin(vec);
   _tfBroadcaster.sendTransform(_aftMappedTrans);
+}
+
+
+/*********************************************************************************/
+void LaserMapping::calcThetaPhiRatio()
+{
+    pcl::PointXYZI pointSel;
+    double thetaStep = 0;
+    double phiStep = 0;
+    double thetaOld = 10;
+    double phiOld = 10;
+    double thetaNew = 10;
+    double phiNew = 10;
+    double minThetaStep = 10;
+    double minPhiStep = 10;
+    _minPhi = 10;
+    _maxPhi = -10;
+//    double maxTheta;
+//    double minTheta;
+
+    // transform full resolution input cloud to map
+    size_t laserCloudFullResNum = _laserCloudFullRes->points.size();
+    if(laserCloudFullResNum < 1e3) return;
+//    ROS_INFO("laser cloud point number: %d", laserCloudFullResNum);
+    for (int i = 0; i < laserCloudFullResNum; i++) {
+        phiOld = phiNew;
+        thetaOld = thetaNew;
+        pointSel = _laserCloudFullRes->points[i];
+        phiNew = getPhi(pointSel);
+        thetaNew = getTheta(pointSel);
+        if(phiNew > _maxPhi) _maxPhi = phiNew;
+//        if(thetaNew > maxTheta) maxTheta = thetaNew;
+        if(phiNew < _minPhi) _minPhi = phiNew;
+//        if(thetaNew < minTheta) minTheta = thetaNew;
+        if(phiNew > M_PI) phiNew -= 2*M_PI;
+        else if(phiNew < -M_PI) phiNew += 2*M_PI;
+        if(thetaNew > 2*M_PI) thetaNew -= 2*M_PI;
+        else if(thetaNew < 0) thetaNew += 2*M_PI;
+        if(thetaOld == 10 && phiOld == 10) continue;
+        phiStep = phiNew - phiOld;
+        thetaStep = thetaNew - thetaOld;
+        if(abs(phiStep) > 1e-2 && abs(phiStep) < minPhiStep)
+            minPhiStep = abs(phiStep);
+        if(abs(thetaStep) > 1e-3 && abs(thetaStep) < minThetaStep)
+            minThetaStep = abs(thetaStep);
+    }
+    _phiRatio = minPhiStep / (_maxPhi-_minPhi);
+    _thetaRatio = minThetaStep / (2*M_PI);
+
+    ROS_INFO("phi ratio: %lf", _phiRatio);
+    ROS_INFO("theta ratio: %lf", _thetaRatio);
+
+    ROS_INFO("min. phi step: %lf", minPhiStep);
+    ROS_INFO("min. theta step: %lf", minThetaStep);
+
+    ROS_INFO("max. phi: %lf", _maxPhi);
+//    ROS_INFO("max. theta: %lf", maxTheta);
+
+    ROS_INFO("min. phi: %lf", _minPhi);
+  //  ROS_INFO("min. theta: %lf", minTheta);
+
+    _maxPhiInd = (int)(1/_phiRatio)+1;
+    _maxThetaInd = (int)(1/_thetaRatio)+1;
+
+    ROS_INFO("phi index number: %d", _maxPhiInd);
+    ROS_INFO("theta index numbe: %d", _maxThetaInd);
+
+    _radius = new double* [_maxPhiInd];
+    for(int i = 0; i < _maxPhiInd; i++)
+    {
+        _radius[i] = new double [_maxThetaInd];
+        for(int j = 0; j < _maxThetaInd; j++) _radius[i][j] = 0;
+    }
+}
+
+void LaserMapping::removeMovingObject()
+{
+    if(_thetaRatio == -1) return;
+    pcl::PointCloud<pcl::PointXYZI>::Ptr curr( new pcl::PointCloud<pcl::PointXYZI>());
+    pcl::PointXYZI pointSel;
+
+    _accumulatedRemoved->clear();
+
+//  ROS_INFO("process 1");
+    // transform full resolution input cloud to map
+    size_t laserCloudFullResNum = _laserCloudFullRes->points.size();
+    for (int i = 0; i < laserCloudFullResNum; i++) {
+        pointSel = _laserCloudFullRes->points[i];
+        int theta = getThetaIndOfRadius(getTheta(pointSel));
+        int phi = getPhiIndOfRadius(getPhi(pointSel));
+        if(phi != -1) _radius[phi][theta] = calcSquaredPointDistance(pointSel);
+    }
+
+//  ROS_INFO("process 2");
+    smoothRadiusScan();
+    
+//  ROS_INFO("process 3");
+    /*
+    pcl::PointXYZI currOrigin;
+    currOrigin.x = 0;
+    currOrigin.y = 0;
+    currOrigin.z = 0;
+    pointAssociateToMap(currOrigin,currOrigin
+*/
+    pcl::ExtractIndices<pcl::PointXYZI> extract;
+    size_t laserCloudSurroundNum = _laserCloudSurroundInd.size();
+//  ROS_INFO("laser cloud surround Num: %d", laserCloudSurroundNum);
+    pcl::PointIndices::Ptr inliers(new pcl::PointIndices());
+//  ROS_INFO("process 4");
+    for (int i = 0; i < laserCloudSurroundNum; i++) {
+        size_t ind = _laserCloudSurroundInd[i];
+        size_t laserCloudCornerNum = _laserCloudCornerArray[ind]->size();
+        size_t laserCloudSurfNum = _laserCloudSurfArray[ind]->size();
+//  ROS_INFO("process 5");
+//  ROS_INFO("corner Num: %d", laserCloudCornerNum);
+//  ROS_INFO("surf Num: %d", laserCloudSurfNum);
+        if(laserCloudCornerNum != 0) {
+        for(int j = 0; j < laserCloudCornerNum; j++) {
+            pointAssociateTobeMapped(_laserCloudCornerArray[ind]->points[j], pointSel);
+//  ROS_INFO("process 6");
+            int theta = getThetaIndOfRadius(getTheta(pointSel));
+            int phi = getPhiIndOfRadius(getPhi(pointSel));
+            float tmp_r = calcSquaredPointDistance(pointSel);
+//            ROS_INFO("(phi, theta) = (%d, %d)", phi,theta);
+            if(phi == -1) continue;
+            double residue = tmp_r - _radius[phi][theta];
+            if(abs(residue) > 0.5 && residue < 0) inliers->indices.push_back(j);
+        }
+//  ROS_INFO("process 7");
+        extract.setInputCloud(_laserCloudCornerArray[ind]);
+        extract.setIndices(inliers);
+        extract.setNegative(false);
+        extract.filter(*curr);
+        *_accumulatedRemoved += *curr;
+//  ROS_INFO("process 8");
+        extract.setNegative(true);
+        extract.filter(*(_laserCloudCornerArray[ind]));
+        inliers->indices.clear();
+        }
+        if(laserCloudSurfNum!=0){
+        for(int j = 0; j < laserCloudSurfNum; j++) {
+            pointAssociateTobeMapped(_laserCloudSurfArray[ind]->points[j], pointSel);
+            int theta = getThetaIndOfRadius(getTheta(pointSel));
+            int phi = getPhiIndOfRadius(getPhi(pointSel));
+            float tmp_r = calcSquaredPointDistance(pointSel);
+            if(phi == -1) continue;
+            double residue = tmp_r - _radius[phi][theta];
+            if(abs(residue) > 0.5 && residue < 0) inliers->indices.push_back(j);
+        }
+        extract.setInputCloud(_laserCloudSurfArray[ind]);
+        extract.setIndices(inliers);
+        extract.setNegative(false);
+        extract.filter(*curr);
+        *_accumulatedRemoved += *curr;
+        extract.setInputCloud(_laserCloudSurfArray[ind]);
+        extract.filter(*(_laserCloudSurfArray[ind]));
+        inliers->indices.clear();
+        }
+    }
+
+    for(int i = 0; i < _maxPhiInd; i++)
+        for(int j = 0; j < _maxThetaInd; j++)
+            _radius[i][j] = 0;
+}
+
+int LaserMapping::getThetaIndOfRadius(double theta)
+{
+    if(theta < 0) theta += 2*M_PI;
+    else if(theta > 2*M_PI) theta -= 2*M_PI;
+    return int(theta/2/M_PI/_thetaRatio);
+}
+
+int LaserMapping::getPhiIndOfRadius(double phi)
+{
+    if(phi < _minPhi || phi > _maxPhi) return -1;
+    double index = (phi - _minPhi) / (_maxPhi - _minPhi )/_phiRatio;
+    double residue = index - int(index+0.5);
+    bool nearToPhiLevel = false;
+    if(abs(residue) < 0.1) nearToPhiLevel = true;
+    return (nearToPhiLevel?index-residue:-1);
+}
+
+void LaserMapping::smoothRadiusScan()
+{
+    int zeroStartInd = -1;
+    int nonZeroInd = -1;
+
+    for(int i = 0; i < _maxThetaInd; i++)
+        for(int j = 0; j < _maxPhiInd; j++)
+        {
+            if(_radius[j][i] == 0 && zeroStartInd == -1) zeroStartInd = j;
+            else if(_radius[i][j] != 0) nonZeroInd = j;
+/*
+            if(nonZeroInd != -1 && zeroStartInd != -1)
+            {
+                for(int k = zeroStartInd;k < nonZeroInd; k++)
+                {
+                    _radius[i][]
+                }
+            }
+*/
+        }
 }
 
 } // end namespace loam

@@ -182,15 +182,15 @@ void TransformMaintenance::laserOdometryHandler(const nav_msgs::Odometry::ConstP
 {
   double roll, pitch, yaw;
   geometry_msgs::Quaternion geoQuat = laserOdometry->pose.pose.orientation;
-  tf::Matrix3x3(tf::Quaternion(geoQuat.z, -geoQuat.x, -geoQuat.y, geoQuat.w)).getRPY(roll, pitch, yaw);
+  tf::Matrix3x3(tf::Quaternion(geoQuat.x, -geoQuat.y, -geoQuat.z, geoQuat.w)).getRPY(roll, pitch, yaw);
 
  _transformSum[0] = -pitch;
   _transformSum[1] = -yaw;
   _transformSum[2] = roll;
 
-  _transformSum[3] = laserOdometry->pose.pose.position.x;
-  _transformSum[4] = laserOdometry->pose.pose.position.y;
-  _transformSum[5] = laserOdometry->pose.pose.position.z;
+  _transformSum[3] = laserOdometry->pose.pose.position.y;
+  _transformSum[4] = laserOdometry->pose.pose.position.z;
+  _transformSum[5] = laserOdometry->pose.pose.position.x;
 
   transformAssociateToMap();
 
@@ -198,13 +198,20 @@ void TransformMaintenance::laserOdometryHandler(const nav_msgs::Odometry::ConstP
       (_transformMapped[2], -_transformMapped[0], -_transformMapped[1]);
 
   _laserOdometry2.header.stamp = laserOdometry->header.stamp;
-  _laserOdometry2.pose.pose.orientation.x = -geoQuat.y;
+/*  _laserOdometry2.pose.pose.orientation.x = -geoQuat.y;
   _laserOdometry2.pose.pose.orientation.y = -geoQuat.z;
   _laserOdometry2.pose.pose.orientation.z = geoQuat.x;
   _laserOdometry2.pose.pose.orientation.w = geoQuat.w;
   _laserOdometry2.pose.pose.position.x = _transformMapped[3];
   _laserOdometry2.pose.pose.position.y = _transformMapped[4];
-  _laserOdometry2.pose.pose.position.z = _transformMapped[5];
+  _laserOdometry2.pose.pose.position.z = _transformMapped[5];*/
+  _laserOdometry2.pose.pose.orientation.x = geoQuat.x;
+  _laserOdometry2.pose.pose.orientation.y = -geoQuat.y;
+  _laserOdometry2.pose.pose.orientation.z = -geoQuat.z;
+  _laserOdometry2.pose.pose.orientation.w = geoQuat.w;
+  _laserOdometry2.pose.pose.position.x = _transformMapped[5];
+  _laserOdometry2.pose.pose.position.y = _transformMapped[3];
+  _laserOdometry2.pose.pose.position.z = _transformMapped[4];
   _pubLaserOdometry2.publish(_laserOdometry2);
 
 ///
@@ -233,23 +240,24 @@ void TransformMaintenance::odomAftMappedHandler(const nav_msgs::Odometry::ConstP
 {
   double roll, pitch, yaw;
   geometry_msgs::Quaternion geoQuat = odomAftMapped->pose.pose.orientation;
-  tf::Matrix3x3(tf::Quaternion(geoQuat.z, -geoQuat.x, -geoQuat.y, geoQuat.w)).getRPY(roll, pitch, yaw);
+//  tf::Matrix3x3(tf::Quaternion(geoQuat.z, -geoQuat.x, -geoQuat.y, geoQuat.w)).getRPY(roll, pitch, yaw);
+  tf::Matrix3x3(tf::Quaternion(geoQuat.x, -geoQuat.y, -geoQuat.z, geoQuat.w)).getRPY(roll, pitch, yaw);
 
   _transformAftMapped[0] = -pitch;
   _transformAftMapped[1] = -yaw;
   _transformAftMapped[2] = roll;
 
-  _transformAftMapped[3] = odomAftMapped->pose.pose.position.x;
-  _transformAftMapped[4] = odomAftMapped->pose.pose.position.y;
-  _transformAftMapped[5] = odomAftMapped->pose.pose.position.z;
+  _transformAftMapped[3] = odomAftMapped->pose.pose.position.y;
+  _transformAftMapped[4] = odomAftMapped->pose.pose.position.z;
+  _transformAftMapped[5] = odomAftMapped->pose.pose.position.x;
 
-  _transformBefMapped[0] = odomAftMapped->twist.twist.angular.x;
-  _transformBefMapped[1] = odomAftMapped->twist.twist.angular.y;
-  _transformBefMapped[2] = odomAftMapped->twist.twist.angular.z;
+  _transformBefMapped[0] = odomAftMapped->twist.twist.angular.y;
+  _transformBefMapped[1] = odomAftMapped->twist.twist.angular.z;
+  _transformBefMapped[2] = odomAftMapped->twist.twist.angular.x;
 
-  _transformBefMapped[3] = odomAftMapped->twist.twist.linear.x;
-  _transformBefMapped[4] = odomAftMapped->twist.twist.linear.y;
-  _transformBefMapped[5] = odomAftMapped->twist.twist.linear.z;
+  _transformBefMapped[3] = odomAftMapped->twist.twist.linear.y;
+  _transformBefMapped[4] = odomAftMapped->twist.twist.linear.z;
+  _transformBefMapped[5] = odomAftMapped->twist.twist.linear.x;
 }
 
 } // end namespace loam

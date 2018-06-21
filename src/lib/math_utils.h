@@ -274,6 +274,22 @@ inline void rotateYXZ(PointT& p,
   rotZ(p, angZ);
 }
 
+template <typename PointT>
+inline double getTheta(const PointT& p)
+{
+    return -std::atan2(p.x,p.z);
+}
+
+template <typename PointT>
+inline double getPhi(const PointT& p)
+{
+    return std::atan(p.y/std::sqrt(p.x*p.x+p.z*p.z));
+}
+
+inline double abs(const double in)
+{
+    return (in>0?in:-in);
+}
 } // end namespace loam
 
 

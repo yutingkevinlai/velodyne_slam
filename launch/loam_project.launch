@@ -34,10 +34,8 @@
   </node>
   -->
 
-  <!--
   <node pkg="loam_velodyne" type="motionRemoval" name="motionRemoval" output="screen">
   </node>
-  -->
   <group if="$(arg rviz)">
     <node launch-prefix="nice" pkg="rviz" type="rviz" name="rviz" args="-d $(find loam_velodyne)/rviz_cfg/loam_velodyne.rviz" />
   </group>

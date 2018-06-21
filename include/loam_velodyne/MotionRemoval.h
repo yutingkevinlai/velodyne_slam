@@ -5,6 +5,7 @@
 #include <ros/node_handle.h>
 #include <sensor_msgs/PointCloud2.h>
 #include <nav_msgs/Odometry.h>
+#include <nav_msgs/Path.h>
 #include <pcl/point_cloud.h>
 #include <pcl/point_types.h>
 #include <pcl/ModelCoefficients.h>
@@ -71,7 +72,6 @@ private:
   ros::Subscriber _subVelodyneCloud2;
   ros::Subscriber _subVelodyneCloudRegistered;
   ros::Subscriber _subLaserCloudSurround;
-  ros::Subscriber _subLaserOdomToInit;
   ros::Subscriber _subTf;
 
   ros::Publisher _pubVelodyneCloud3;
@@ -79,6 +79,11 @@ private:
   ros::Publisher _pubVelodyneCloudRegistered;
   ros::Publisher _pubLaserCloudSurround;
   ros::Publisher _pubLaserOdomToInit;
+
+  nav_msgs::Path loamPath;
+
+  ros::Subscriber _subLaserOdomToInit;
+  ros::Publisher _pubLoamPath;
 
   tf::TransformBroadcaster _tfBroadcaster;
   tf::StampedTransform _stampTf;
