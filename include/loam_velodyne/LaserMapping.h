@@ -134,6 +134,8 @@ public:
   /** \brief Try to process buffered data. */
   void process();
 
+  ~LaserMapping();
+
 
 protected:
   /** \brief Reset flags, etc. */
@@ -152,7 +154,7 @@ protected:
   
 
   /************************/
-  void removeMovingObject();
+  void removeMovingObject(int centerI, int centerJ, int centerK);
   void calcThetaPhiRatio();
   int getPhiIndOfRadius(double phi);
   int getThetaIndOfRadius(double theta);
@@ -197,6 +199,10 @@ private:
   int _maxPhiInd;
   double _minPhi;
   double _maxPhi;
+  bool _accumulatedRemovedPublished;
+
+  double _gradThreshold;
+  bool _isRemoveMovingObject;
 
   pcl::PointCloud<pcl::PointXYZI>::Ptr _laserCloudCornerLast;   ///< last corner points cloud
   pcl::PointCloud<pcl::PointXYZI>::Ptr _laserCloudSurfLast;     ///< last surface points cloud
