@@ -4,7 +4,7 @@
   <arg name="rviz" default="true" />
   <arg name="scanPeriod" default="0.1" />
   <arg name="removeObject" default="true"/>
-  <arg name="gradThreshold" default="6.5"/>
+  <arg name="gradThreshold" default="20"/>
 
   <node pkg="loam_velodyne" type="multiScanRegistration" name="multiScanRegistration" output="screen">
     <param name="lidar" value="VLP-16" /> <!-- options: VLP-16  HDL-32  HDL-64E -->

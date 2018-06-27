@@ -66,9 +66,9 @@ LaserMapping::LaserMapping(const float& scanPeriod,
         _laserCloudHeight(11),
         _laserCloudDepth(21),
         _laserCloudNum(_laserCloudWidth * _laserCloudHeight * _laserCloudDepth),
-        _thetaRatio(-1),
-        _phiRatio(-1),
-        _accumulatedRemovedPublished(false),
+        _thetaRatio(-1), // for motion removal
+        _phiRatio(-1), // for motion removal
+        _accumulatedRemovedPublished(false), // for motion removal
         _laserCloudCornerLast(new pcl::PointCloud<pcl::PointXYZI>()),
         _laserCloudSurfLast(new pcl::PointCloud<pcl::PointXYZI>()),
         _laserCloudFullRes(new pcl::PointCloud<pcl::PointXYZI>()),
@@ -80,7 +80,7 @@ LaserMapping::LaserMapping(const float& scanPeriod,
         _laserCloudSurroundDS(new pcl::PointCloud<pcl::PointXYZI>()),
         _laserCloudCornerFromMap(new pcl::PointCloud<pcl::PointXYZI>()),
         _laserCloudSurfFromMap(new pcl::PointCloud<pcl::PointXYZI>()),
-        _accumulatedRemoved(new pcl::PointCloud<pcl::PointXYZI>())
+        _accumulatedRemoved(new pcl::PointCloud<pcl::PointXYZI>()) // for motion removal
 {
   // initialize mapping odometry and odometry tf messages
   _odomAftMapped.header.frame_id = "/camera_init";
@@ -214,7 +214,7 @@ bool LaserMapping::setup(ros::NodeHandle& node,
   // advertise laser mapping topics
   _pubLaserCloudSurround = node.advertise<sensor_msgs::PointCloud2> ("/laser_cloud_surround", 1);
   _pubLaserCloudFullRes = node.advertise<sensor_msgs::PointCloud2> ("/velodyne_cloud_registered", 2);
-  _pubLaserRemoved = node.advertise<sensor_msgs::PointCloud2> ("/loam/removed_points", 2);
+  _pubLaserRemoved = node.advertise<sensor_msgs::PointCloud2> ("/loam/removed_points", 2); // for motion removal
   _pubOdomAftMapped = node.advertise<nav_msgs::Odometry> ("/aft_mapped_to_init", 5);
 
 
@@ -403,8 +403,8 @@ void LaserMapping::laserCloudFullResHandler(const sensor_msgs::PointCloud2ConstP
   _laserCloudFullRes->clear();
   pcl::fromROSMsg(*laserCloudFullResMsg, *_laserCloudFullRes);
 //
-  pcl::transformPointCloud(*_laserCloudFullRes, *_laserCloudFullRes, _invTransform);
-  if(_thetaRatio == -1 && _phiRatio == -1) calcThetaPhiRatio();
+  pcl::transformPointCloud(*_laserCloudFullRes, *_laserCloudFullRes, _invTransform); // transform the point cloud for NCTU dataset
+  if(_thetaRatio == -1 && _phiRatio == -1) calcThetaPhiRatio(); // calculate the ratio for removal
 //
 
   _newLaserCloudFullRes = true;
@@ -1230,10 +1230,10 @@ void LaserMapping::calcThetaPhiRatio()
     ROS_INFO("min. theta step: %lf", minThetaStep);
 
     ROS_INFO("max. phi: %lf", _maxPhi);
-//    ROS_INFO("max. theta: %lf", maxTheta);
+    // ROS_INFO("max. theta: %lf", maxTheta);
 
     ROS_INFO("min. phi: %lf", _minPhi);
-  //  ROS_INFO("min. theta: %lf", minTheta);
+    // ROS_INFO("min. theta: %lf", minTheta);
 
     _maxPhiInd = (int)(1/_phiRatio)+1;
     _maxThetaInd = (int)(1/_thetaRatio)+1;
@@ -1255,16 +1255,15 @@ void LaserMapping::removeMovingObject(int centerI, int centerJ, int centerK)
     pcl::PointCloud<pcl::PointXYZI>::Ptr curr( new pcl::PointCloud<pcl::PointXYZI>());
     pcl::PointXYZI pointSel;
 
+    // reset _accumulatedRemoved
     if(_accumulatedRemovedPublished){
         _accumulatedRemoved->clear();
         _accumulatedRemovedPublished = false;
     }
 
-//  ROS_INFO("process 1");
+    // ROS_INFO("process 1");
     // transform full resolution input cloud to map
     size_t laserCloudFullResNum = _laserCloudFullRes->points.size();
-//    ROS_INFO("point cloud size: %d", laserCloudFullResNum);
-    if(laserCloudFullResNum < 1e3) return;
     for (int i = 0; i < laserCloudFullResNum; i++) {
         pointSel = _laserCloudFullRes->points[i];
         int theta = getThetaIndOfRadius(getTheta(pointSel));
@@ -1272,21 +1271,24 @@ void LaserMapping::removeMovingObject(int centerI, int centerJ, int centerK)
         if(phi != -1) _radius[phi][theta] = calcSquaredPointDistance(pointSel);
     }
 
-//  ROS_INFO("process 2");
+    // std::cout << "Smooth the _radius" << std::endl;
     smoothRadiusScan();
     
-//  ROS_INFO("process 3");
+    // ROS_INFO("process 3");
     /*
     pcl::PointXYZI currOrigin;
     currOrigin.x = 0;
     currOrigin.y = 0;
     currOrigin.z = 0;
     pointAssociateToMap(currOrigin,currOrigin
-*/
+    */
+  
+    // extract indices
     pcl::ExtractIndices<pcl::PointXYZI> extract;
     size_t laserCloudSurroundNum = _laserCloudSurroundInd.size();
-//  ROS_INFO("laser cloud surround Num: %d", laserCloudSurroundNum);
+    // ROS_INFO("laser cloud surround Num: %d", laserCloudSurroundNum);
     pcl::PointIndices::Ptr inliers(new pcl::PointIndices());
+    //  hober start here
 //  ROS_INFO("process 4");
     for (int i = -1; i < 2; i++) {
         for ( int j = -1; j < 2; j++) {
@@ -1346,7 +1348,7 @@ void LaserMapping::removeMovingObject(int centerI, int centerJ, int centerK)
                         extract.setNegative(false);
                         extract.filter(*curr);
                         *_accumulatedRemoved += *curr;
-                        extract.setInputCloud(_laserCloudSurfArray[ind]);
+                        extract.setNegative(true);
                         extract.filter(*(_laserCloudSurfArray[ind]));
                         inliers->indices.clear();
                     }// end if
@@ -1354,7 +1356,7 @@ void LaserMapping::removeMovingObject(int centerI, int centerJ, int centerK)
             }// end for k
         }// end for j
     }// end for i
-
+    // hober end here
     for(int i = 0; i < _maxPhiInd; i++)
         for(int j = 0; j < _maxThetaInd; j++)
             _radius[i][j] = 0;
