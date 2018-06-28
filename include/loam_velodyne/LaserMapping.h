@@ -200,7 +200,9 @@ private:
   double _minPhi;
   double _maxPhi;
   bool _accumulatedRemovedPublished;
-
+  double _phiRegion;
+  double _phiDiffFactor;
+  double _reserveDistance;
   double _gradThreshold;
   bool _isRemoveMovingObject;
 

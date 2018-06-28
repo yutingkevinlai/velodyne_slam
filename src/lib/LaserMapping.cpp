@@ -204,6 +204,15 @@ bool LaserMapping::setup(ros::NodeHandle& node,
   if (privateNode.getParam("gradThreshold", fParam)) {
      _gradThreshold = fParam;
   }
+  if (privateNode.getParam("phiDiffFactor", fParam)) {
+     _phiDiffFactor = fParam;
+  }
+  if (privateNode.getParam("phiRegion", fParam)) {
+     _phiRegion = fParam;
+  }
+  if (privateNode.getParam("reserveDistance", fParam)) {
+     _reserveDistance = fParam;
+  }
   //
   //
   //
@@ -1290,9 +1299,9 @@ void LaserMapping::removeMovingObject(int centerI, int centerJ, int centerK)
     pcl::PointIndices::Ptr inliers(new pcl::PointIndices());
     //  hober start here
 //  ROS_INFO("process 4");
-    for (int i = -1; i < 2; i++) {
-        for ( int j = -1; j < 2; j++) {
-            for ( int k = -1; k < 2; k++){
+    for (int i = -2; i < 3; i++) {
+        for ( int j = -2; j < 3; j++) {
+            for ( int k = -2; k < 3; k++){
                 size_t ind = toIndex(i+centerI,j+centerJ,k+centerK);
                 if(ind > _laserCloudNum) continue;
 //        size_t ind = _laserCloudSurroundInd[index];
@@ -1313,7 +1322,7 @@ void LaserMapping::removeMovingObject(int centerI, int centerJ, int centerK)
                         float tmp_r = calcSquaredPointDistance(pointSel);
 //            ROS_INFO("(phi, theta) = (%d, %d)", phi,theta);
                         double residue = tmp_r - _radius[phi][theta];
-                        bool isRemove = abs(residue) > 0.3 && tmp_r < 20*20 && r>0 && residue < 0;
+                        bool isRemove = tmp_r < 100*100 && residue < -_reserveDistance;
                         if(isRemove) inliers->indices.push_back(l);
                     }
 //  ROS_INFO("process 7");
@@ -1339,7 +1348,7 @@ void LaserMapping::removeMovingObject(int centerI, int centerJ, int centerK)
                         if( r == 0 ) continue;
                         float tmp_r = calcSquaredPointDistance(pointSel);
                         double residue = tmp_r - _radius[phi][theta];
-                        bool isRemove = abs(residue) > 0.3 && tmp_r < 20*20 && r>0 && residue < 0;
+                        bool isRemove = tmp_r < 100*100 && residue < -_reserveDistance;
                         if(isRemove) inliers->indices.push_back(l);
                     }
                     if(!inliers->indices.empty()){
@@ -1376,7 +1385,7 @@ int LaserMapping::getPhiIndOfRadius(double phi)
     double index = (phi - _minPhi) / (_maxPhi - _minPhi )/_phiRatio;
     double residue = index - double(int(index+0.5));
     bool nearToPhiLevel = false;
-    if(abs(residue) < 0.5) nearToPhiLevel = true;
+    if(abs(residue) < _phiRegion) nearToPhiLevel = true;
     if(index-residue >= _maxPhiInd) return -1;
 //if(index-residue>20)    ROS_INFO("phi index: %lf", index-residue);
     return (nearToPhiLevel?index-residue:-1);
@@ -1392,7 +1401,7 @@ void LaserMapping::smoothRadiusScan()
         {
             double diffPhi = -_radius[i][j+1]+_radius[i+2][j+1];
             double diffTheta = -_radius[i+1][j]+_radius[i+1][j+2];
-            grad[i][j] = 3*diffPhi*diffPhi + diffTheta*diffTheta;
+            grad[i][j] = _phiDiffFactor*diffPhi*diffPhi + diffTheta*diffTheta;
         }
     }
     for(int i = 1; i < _maxPhiInd-1; i++)

@@ -5,10 +5,13 @@
   <arg name="rviz" default="true" />
   <arg name="scanPeriod" default="0.1" />
   <arg name="isRemoveMovingObject" default="true" />
+  <arg name="gradThreshold" default="20" />
+  <arg name="phiRegion" default="0.5" />
+  <arg name="phiDiffFactor" default="0.1" />
+  <arg name="reserveDistance" default="0.2" />
 
   <!-- Bag file path -->  
-  <!--<arg name="bag_file" value="$(find loam_velodyne)/data/sdc_4.bag"/>-->
-  <arg name="bag_file" value="/home/kevin/catkin_segmap/src/segmap/segmapper/demonstration_files/sdc/data1.bag"/>
+  <arg name="bag_file" value="$(find loam_velodyne)/data/data1.bag"/>
 
   <node pkg="loam_velodyne" type="multiScanRegistration" name="multiScanRegistration" output="screen">
     <param name="lidar" value="VLP-16" /> <!-- options: VLP-16  HDL-32  HDL-64E -->
@@ -27,6 +30,10 @@
   <node pkg="loam_velodyne" type="laserMapping" name="laserMapping" output="screen">
     <param name="scanPeriod" value="$(arg scanPeriod)" />
     <param name="isRemoveMovingObject" value="$(arg isRemoveMovingObject)" />
+    <param name="gradThreshold" value="$(arg gradThreshold)" />
+    <param name="phiRegion" value="$(arg phiRegion)" />
+    <param name="phiDiffFactor" value="$(arg phiDiffFactor)" />
+    <param name="reserveDistance" value="$(arg reserveDistance)" />
     <remap from="/imu/data" to="/ddd"/>
   </node>
 
