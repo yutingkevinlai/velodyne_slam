@@ -199,10 +199,10 @@ bool LaserMapping::setup(ros::NodeHandle& node,
   ////////////////////////////
   bool bParam;
   if (privateNode.getParam("isRemoveMovingObject", bParam)) {
-     _isRemoveMovingObject = bParam;
+    _isRemoveMovingObject = bParam;
   }
   if (privateNode.getParam("gradThreshold", fParam)) {
-      _gradThreshold = fParam;
+     _gradThreshold = fParam;
   }
   //
   //
