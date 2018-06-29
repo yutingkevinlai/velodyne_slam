@@ -28,17 +28,5 @@ $ source ~/catkin_ws/devel/setup.bash
 roslaunch loam_velodyne sdc_project.launch
 ```
 
-Remember to check the velodyne configuration to modify the parameters in sdc_project.launch
-The bag file will automatically played but paused at first, press <space> to play it.
+Remember to check the velodyne configuration to modify the parameters in sdc_project.launch. The bag file will automatically played but paused at first, press <kbd>Space</kbd> to play it.
 
-<!--
-Or read from velodyne [VLP16 sample pcap](https://midas3.kitware.com/midas/folder/12979):
-```
-roslaunch velodyne_pointcloud VLP16_points.launch pcap:="/home/laboshinl/Downloads/velodyne.pcap"
-```
-
-
-[Quantifying Aerial LiDAR Accuracy of LOAM for Civil Engineering Applications.](https://ceen.et.byu.edu/sites/default/files/snrprojects/wolfe_derek.pdf) Derek Anthony Wolfe
-
-[ROS & Loam_velodyne](https://ishiguro440.wordpress.com/2016/04/05/%E5%82%99%E5%BF%98%E9%8C%B2%E3%80%80ros-loam_velodyne/) 
--->
