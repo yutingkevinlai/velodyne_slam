@@ -29,16 +29,6 @@ MotionRemoval::~MotionRemoval()
 bool MotionRemoval::setup(ros::NodeHandle& node,
                           ros::NodeHandle& privateNode)
 {
-/*  _pubVelodyneCloud3 = node.advertise<sensor_msgs::PointCloud2> ("/rotate/velodyne_cloud_3", 2);
-  _pubVelodyneCloud2 = node.advertise<sensor_msgs::PointCloud2> ("/rotate/velodyne_cloud_2", 2);
-  _pubVelodyneCloudRegistered = node.advertise<sensor_msgs::PointCloud2> ("/rotate/velodyne_cloud_registered", 2);
-  _pubLaserCloudSurround = node.advertise<sensor_msgs::PointCloud2> ("/rotate/laser_cloud_surround", 2);
-  _pubLaserOdomToInit = node.advertise<nav_msgs::Odometry> ("rotate/laser_odom_to_init", 5); 
-
-  _subVelodyneCloud3 = node.subscribe<sensor_msgs::PointCloud2>	("/velodyne_cloud_3", 2, &MotionRemoval::velodyneCloud3Handler, this);
-  _subVelodyneCloud2 = node.subscribe<sensor_msgs::PointCloud2>	("/velodyne_cloud_2", 2, &MotionRemoval::velodyneCloud3Handler, this);
-  _subVelodyneCloudRegistered = node.subscribe<sensor_msgs::PointCloud2> ("/laser_cloud_surround", 2, &MotionRemoval::velodyneCloudRegisteredHandler, this);
-  _subLaserCloudSurround = node.subscribe<sensor_msgs::PointCloud2> ("/laser_cloud_surround", 2, &MotionRemoval::laserCloudSurroundHandler, this);*/
   _subLaserOdomToInit = node.subscribe<nav_msgs::Odometry> ("/integrated_to_init", 5, &MotionRemoval::laserOdomToInitHandler, this);
   _pubLoamPath = node.advertise<nav_msgs::Path> ("/loam/path", 5);
 // _subTf = node.subscribe<tf2_msgs::TFMessage> ("/tf", 10, &MotionRemoval::tfHandler, this);
@@ -64,47 +54,16 @@ void MotionRemoval::spin()
   }
 }
   
-void MotionRemoval::laserCloudSurroundHandler(const sensor_msgs::PointCloud2ConstPtr& cloudMsg)
-{
-  pcl::fromROSMsg(*cloudMsg, *_curCloud);
-  _timeCurCloud = cloudMsg->header.stamp;
-
-  pcl::transformPointCloud(*_curCloud, *_curCloud, _transform);
-  publishCloudMsg(_pubLaserCloudSurround, *_curCloud, _timeCurCloud, "/camera_init");
-}
-
-void MotionRemoval::velodyneCloud3Handler(const sensor_msgs::PointCloud2ConstPtr& cloudMsg)
-{
-  pcl::fromROSMsg(*cloudMsg, *_curCloud);
-  _timeCurCloud = cloudMsg->header.stamp;
-  pcl::transformPointCloud(*_curCloud, *_curCloud, _transform);
-  publishCloudMsg(_pubVelodyneCloud3, *_curCloud, _timeCurCloud, "/rotation/camera");
-}
-
-void MotionRemoval::velodyneCloud2Handler(const sensor_msgs::PointCloud2ConstPtr& cloudMsg)
-{
-  pcl::fromROSMsg(*cloudMsg, *_curCloud);
-  _timeCurCloud = cloudMsg->header.stamp;
-  pcl::transformPointCloud(*_curCloud, *_curCloud, _transform);
-  publishCloudMsg(_pubVelodyneCloud2, *_curCloud, _timeCurCloud, "/rotation/camera");
-}
-
-void MotionRemoval::velodyneCloudRegisteredHandler(const sensor_msgs::PointCloud2ConstPtr& cloudMsg)
-{
-  pcl::fromROSMsg(*cloudMsg, *_curCloud);
-  _timeCurCloud = cloudMsg->header.stamp;
-  pcl::transformPointCloud(*_curCloud, *_curCloud, _transform);
-  publishCloudMsg(_pubLaserCloudSurround, *_curCloud, _timeCurCloud, "/camera_init");
-}
-
+  
+  
 void MotionRemoval::laserOdomToInitHandler(const nav_msgs::OdometryConstPtr& odomMsg)
 {
-  geometry_msgs::PoseStamped pose;
-  pose.pose = odomMsg->pose.pose;
-  pose.header = odomMsg->header;
-  loamPath.poses.push_back(pose);
-  loamPath.header = pose.header;
-  _pubLoamPath.publish(loamPath);
+    geometry_msgs::PoseStamped pose;
+    pose.pose = odomMsg->pose.pose;
+    pose.header = odomMsg->header;
+    loamPath.poses.push_back(pose);
+    loamPath.header = pose.header;
+    _pubLoamPath.publish(loamPath);
 }
 void MotionRemoval::tfHandler(const tf2_msgs::TFMessageConstPtr& tfMsg)
 {
